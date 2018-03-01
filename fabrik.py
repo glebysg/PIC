@@ -1,17 +1,19 @@
 import numpy as np
-from utils import normalize
+from utils import normalize, distance
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
         self.length =length
         self.orientation = y
+
 class ikChain:
-    def __init__(self,base=[0,0,0],chain=[], tolerance=0.1):
+    def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10):
         # a 3d point indicating the base of the kinematic chain
         self.base = np.array(base,ndtype=float)
         # a list of iklinks
         self.chain = chain
         # error tolerance
         self.tolerance = tolerance
+        self.iterations = iterations
     def get_points(self):
         points = [self.base]
         for i in range(len(self.chain)):
@@ -48,6 +50,13 @@ class ikChain:
         else:
             # initialize the points
             self.points = self.get_points()
-
-
-
+            # get distance between target and goal 
+            error = distance(self.points[-1],self.target)
+            count = 0
+            while error > self.tolerance:
+                self.backward()
+                self.forward()
+                error = distance(self.points[-1],self.target)
+                if count > self.iterations:
+                        break
+                count += 1
