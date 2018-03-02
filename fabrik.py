@@ -1,19 +1,39 @@
 import numpy as np
 from utils import normalize, distance
+from vpython import *
+
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
-        self.length =length
+        self.length = length
         self.orientation = y
 
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10):
         # a 3d point indicating the base of the kinematic chain
-        self.base = np.array(base,ndtype=float)
+        self.base = np.array(base,dtype=float)
         # a list of iklinks
         self.chain = chain
         # error tolerance
         self.tolerance = tolerance
         self.iterations = iterations
+
+    def init_skeleton(self):
+        # initialize the points
+        self.points = self.get_points()
+        # draw a box on the base
+        self.base_box = box(pos=vec(*self.base), length=10, height=3, width=10)
+        #draw each element in the ik chain
+        self.graphic_ik = []
+        for index in range(len(self.chain)):
+            # Normalize the orientation o f the ik link
+            pos = vec(*self.point[index])
+            axis = vec(*(self.chain[index].orientation*self.chain[orientation].length))
+            self.chain[index].orientation = normalize(self.chain[index].orientation)
+            joint =  sphere(pos=pos,color=color.green, radius = 4)
+            link = cylinder(pos=pos, axis=axis, radius=2)
+            self.chain.append(joint)
+            self.chain.append(link)
+
     def get_points(self):
         points = [self.base]
         for i in range(len(self.chain)):
@@ -60,3 +80,13 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
+    def animate(self):
+      rate(100)
+      # self.t = self.t + self.dt
+      # self.ball.pos = self.ball.pos + (self.ball.p/self.ball.mass)*self.dt
+      # if not (self.side > self.ball.pos.x > -self.side):
+        # self.ball.p.x = -self.ball.p.x
+      # if not (self.side > self.ball.pos.y > -self.side):
+        # self.ball.p.y = -self.ball.p.y
+      # if not (self.side > self.ball.pos.z > -self.side):
+        # self.ball.p.z = -self.ball.p.z
