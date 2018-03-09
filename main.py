@@ -1,3 +1,4 @@
+from vpython import *
 from fabrik import ikLink, ikChain
 
 def create_chain():
