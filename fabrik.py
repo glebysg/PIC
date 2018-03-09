@@ -5,7 +5,7 @@ from vpython import *
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
         self.length = length
-        self.orientation = y
+        self.orientation = np.array(orientation,dtype=float)
 
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10):
@@ -23,12 +23,13 @@ class ikChain:
         # draw a box on the base
         self.base_box = box(pos=vec(*self.base), length=10, height=3, width=10)
         #draw each element in the ik chain
+        scene.width = 700
+        scene.height = 700
         self.graphic_ik = []
         for index in range(len(self.chain)):
             # Normalize the orientation o f the ik link
-            pos = vec(*self.point[index])
-            axis = vec(*(self.chain[index].orientation*self.chain[orientation].length))
-            self.chain[index].orientation = normalize(self.chain[index].orientation)
+            pos = vec(*self.points[index])
+            axis = vec(*(normalize(self.chain[index].orientation)*self.chain[index].length))
             joint =  sphere(pos=pos,color=color.green, radius = 4)
             link = cylinder(pos=pos, axis=axis, radius=2)
             self.chain.append(joint)
@@ -36,10 +37,13 @@ class ikChain:
 
     def get_points(self):
         points = [self.base]
+        previous_point = self.base
         for i in range(len(self.chain)):
-            next_point = point[i] +\
-                normalize(self.chain[i.orientation])*self.chain[i].length
-            points.append(next_point)
+            point = previous_point +\
+                normalize(self.chain[i].orientation)*self.chain[i].length
+            points.append(point)
+            previous_point = point
+        return points
     def forward(self):
         for i in range(len(self.chain)):
             # reorient towards the backward chain
