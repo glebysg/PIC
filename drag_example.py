@@ -1,5 +1,4 @@
 from vpython import *
-scene.range = 5
 box()
 
 drag = False

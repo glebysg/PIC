@@ -16,6 +16,11 @@ class ikChain:
         # error tolerance
         self.tolerance = tolerance
         self.iterations = iterations
+        # for animation
+        self.drag = True
+        # self.ik_sphere=None
+        self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
+
 
     def init_skeleton(self):
         # initialize the points
@@ -35,7 +40,21 @@ class ikChain:
             link = cylinder(pos=pos, axis=axis, radius=2)
             self.chain.append(joint)
             self.chain.append(link)
-        gripper = pyramid(pos=vec(*self.points[-1]), size=vec(6,6,4), axis=axis, color=color.green)
+        gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4), axis=axis, color=color.green)
+        # Create the ik ball to manipulate the chain and bind the drag
+        self.ik_sphere.pos=vec(*self.points[-1])
+        def down():
+            self.drag = True
+        def move():
+            if self.drag: # mouse button is down
+                self.ik_sphere.color = color.cyan
+                self.ik_sphere.pos = scene.mouse.pos
+        def up():
+            self.ik_sphere.color = color.red
+            self.drag = False
+        scene.bind("mousedown", down)
+        scene.bind("mousemove", move)
+        scene.bind("mouseup", up)
 
 
     def get_points(self):
@@ -47,6 +66,7 @@ class ikChain:
             points.append(point)
             previous_point = point
         return points
+
     def forward(self):
         for i in range(len(self.chain)):
             # reorient towards the backward chain
