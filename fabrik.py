@@ -26,6 +26,7 @@ class ikChain:
         scene.width = 700
         scene.height = 700
         self.graphic_ik = []
+        axis = None
         for index in range(len(self.chain)):
             # Normalize the orientation o f the ik link
             pos = vec(*self.points[index])
@@ -34,6 +35,8 @@ class ikChain:
             link = cylinder(pos=pos, axis=axis, radius=2)
             self.chain.append(joint)
             self.chain.append(link)
+        gripper = pyramid(pos=vec(*self.points[-1]), size=vec(6,6,4), axis=axis, color=color.green)
+
 
     def get_points(self):
         points = [self.base]
