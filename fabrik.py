@@ -53,7 +53,6 @@ class ikChain:
                 self.new_pos = vec_to_np(self.ik_sphere.pos, float)
                 if not np.array_equal(self.animation_pos,self.new_pos):
                     self.animation_pos = copy.copy(self.new_pos)
-                    print(self.animation_pos)
                     #Get the target from the sphere
                     self.solve(self.animation_pos)
         def up():
@@ -67,20 +66,14 @@ class ikChain:
         axis = None
         self.ik_sphere.pos = vec(*self.target)
         self.ik_sphere.radius = 5
-        count = 0
         for index in range(len(points)-1):
             # Normalize the orientation o f the ik link
             pos = vec(*points[index])
             length = distance(points[index],points[index+1])
-            print("length:", length)
             orientation = normalize(points[index+1]-points[index])
             axis = vec(*(orientation*length))
             joint =  sphere(pos=pos,color=color, radius = 4)
             link = cylinder(pos=pos, axis=axis, color=color,radius=2)
-            if count == 3:
-                break
-            count +=1
-
 
     def draw_chain(self):
         axis = None
@@ -107,9 +100,10 @@ class ikChain:
         return points
 
     def forward(self):
+        backward_points = self.backward_points[::-1]
         for i in range(len(self.chain)):
             # reorient towards the backward chain
-            new_orientation = normalize(self.backward_points[i+1]-self.points[i])
+            new_orientation = normalize(backward_points[i+1]-self.points[i])
             self.chain[i].orientation = new_orientation
             # change the position of the point at the
             # end of the link
@@ -143,17 +137,13 @@ class ikChain:
             error = distance(self.points[-1],self.target)
             count = 0
             while error > self.tolerance:
-                print("IN THE WHILE LOOP")
                 self.backward()
-                self.draw_debug(self.backward_points,color.blue)
                 self.forward()
-                break
                 self.draw_chain()
                 error = distance(self.points[-1],self.target)
                 if count > self.iterations:
                         break
                 count += 1
-            print(count)
 
     def animate(self):
         rate(100)
