@@ -10,10 +10,12 @@ def create_chain():
     return link_chain
 
 def main():
-    chain = ikChain(chain=create_chain())
+    chain = ikChain(chain=create_chain(),iterations=0)
     chain.init_skeleton()
-    while True:
-      chain.animate()
+    chain.solve([79.95002073,  12.47134148, -18.19354683])
+    # chain.animate()
+    # while True:
+        # chain.animate()
 
 if __name__ == "__main__":
     main()

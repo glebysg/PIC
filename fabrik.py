@@ -22,7 +22,6 @@ class ikChain:
         # self.ik_sphere=None
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
 
-
     def init_skeleton(self):
         # initialize the points
         self.points = self.get_points()
@@ -54,6 +53,7 @@ class ikChain:
                 self.new_pos = vec_to_np(self.ik_sphere.pos, float)
                 if not np.array_equal(self.animation_pos,self.new_pos):
                     self.animation_pos = copy.copy(self.new_pos)
+                    print(self.animation_pos)
                     #Get the target from the sphere
                     self.solve(self.animation_pos)
         def up():
@@ -63,6 +63,38 @@ class ikChain:
         scene.bind("mousemove", move)
         scene.bind("mouseup", up)
 
+    def draw_debug(self,points,color):
+        axis = None
+        self.ik_sphere.pos = vec(*self.target)
+        self.ik_sphere.radius = 5
+        count = 0
+        for index in range(len(points)-1):
+            # Normalize the orientation o f the ik link
+            pos = vec(*points[index])
+            length = distance(points[index],points[index+1])
+            print("length:", length)
+            orientation = normalize(points[index+1]-points[index])
+            axis = vec(*(orientation*length))
+            joint =  sphere(pos=pos,color=color, radius = 4)
+            link = cylinder(pos=pos, axis=axis, color=color,radius=2)
+            if count == 3:
+                break
+            count +=1
+
+
+    def draw_chain(self):
+        axis = None
+        for index in range(len(self.chain)):
+            # Normalize the orientation o f the ik link
+            pos = vec(*self.points[index])
+            axis = vec(*(normalize(self.chain[index].orientation)\
+                    *self.chain[index].length))
+            self.graphic_ik[index*2].pos = pos
+            self.graphic_ik[index*2+1].pos = pos
+            self.graphic_ik[index*2+1].axis = axis
+        self.gripper.pos = vec(*self.points[-1])
+        self.gripper.axis = axis
+        self.gripper.size = vec(2,4,4)
 
     def get_points(self):
         points = [self.base]
@@ -82,14 +114,16 @@ class ikChain:
             # change the position of the point at the
             # end of the link
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
+
     def backward(self):
         target_point = self.target
         self.backward_points = [target_point]
         for i in range(len(self.points)-2,-1,-1):
             to_target = normalize(self.points[i] - target_point)
             backward_point = target_point + to_target*self.chain[i].length
-            self.backward_points.append = backward_point
+            self.backward_points.append(backward_point)
             target_point = backward_point
+
     def solve(self, target):
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
@@ -109,27 +143,22 @@ class ikChain:
             error = distance(self.points[-1],self.target)
             count = 0
             while error > self.tolerance:
+                print("IN THE WHILE LOOP")
                 self.backward()
+                self.draw_debug(self.backward_points,color.blue)
                 self.forward()
+                break
+                self.draw_chain()
                 error = distance(self.points[-1],self.target)
                 if count > self.iterations:
                         break
                 count += 1
+            print(count)
+
     def animate(self):
         rate(100)
         # if the mouse is being dragged
         if self.drag:
             # Animate the solved ik chain
-            axis = None
-            for index in range(len(self.chain)):
-                # Normalize the orientation o f the ik link
-                pos = vec(*self.points[index])
-                axis = vec(*(normalize(self.chain[index].orientation)\
-                        *self.chain[index].length))
-                self.graphic_ik[index*2].pos = pos
-                self.graphic_ik[index*2+1].pos = pos
-                self.graphic_ik[index*2+1].axis = axis
-            self.gripper.pos = vec(*self.points[-1])
-            self.gripper.axis = axis
-            self.gripper.size = vec(2,4,4)
+            self.draw_chain()
 
