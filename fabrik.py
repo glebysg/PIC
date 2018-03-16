@@ -1,6 +1,7 @@
 import numpy as np
-from utils import normalize, distance
+from utils import normalize, distance, vec_to_np
 from vpython import *
+import copy
 
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
@@ -43,23 +44,18 @@ class ikChain:
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4), axis=axis, color=color.green)
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
-        self.animation_pos=vec(*self.points[-1])
+        self.animation_pos=copy.copy(self.points[-1])
         def down():
             self.drag = True
         def move():
             if self.drag: # mouse button is down
                 self.ik_sphere.color = color.cyan
                 self.ik_sphere.pos = scene.mouse.pos
-            self.new_pos = self.ik_sphere.pos
-            if not self.animation_pos.equals(self.new_pos):
-                self.animation_pos = self.new_pos
-                #Get the target from the sphere
-                target = np.array([
-                  self.animation_pos.x,
-                  self.animation_pos.y,
-                  self.animation_pos.z,
-                  ], dtype=float)
-                self.solve(target)
+                self.new_pos = vec_to_np(self.ik_sphere.pos, float)
+                if not np.array_equal(self.animation_pos,self.new_pos):
+                    self.animation_pos = copy.copy(self.new_pos)
+                    #Get the target from the sphere
+                    self.solve(self.animation_pos)
         def up():
             self.ik_sphere.color = color.red
             self.drag = False
@@ -99,7 +95,7 @@ class ikChain:
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)
         # if the target is reachable
-        if (sum([l.length for l in self.chain]) > distance_to_target):
+        if (sum([l.length for l in self.chain]) < distance_to_target):
             # Get goal orientation
             goal_orientation = self.target-self.base
             for i in range(len(self.chain)):
@@ -119,7 +115,6 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
-        print("solved")
     def animate(self):
         rate(100)
         # if the mouse is being dragged
