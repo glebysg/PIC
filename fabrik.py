@@ -9,7 +9,16 @@ class ikLink:
         self.orientation = np.array(orientation, dtype=float)
 
 class ikChain:
-    def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10):
+    def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
+            pose_imitation=False, human_joint_index=None):
+        # param constraint checkup
+        if pose_imitation and human_joint_index is None:
+            raise ValueError('the parameter human_joint_index must be \
+                        specified when using pose imitation')
+        elif pose_imitation and len(human_joint_index)!=3:
+            raise ValueError('the parameter human_joint_index must be \
+                   a list of three indices(integers) indicating\
+                   shoulder, elbow and gripper')
         # a 3d point indicating the base of the kinematic chain
         self.base = np.array(base, dtype=float)
         # a list of iklinks
@@ -21,6 +30,8 @@ class ikChain:
         self.drag = True
         # self.ik_sphere=None
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
+        self.pose_imitation=pose_imitation
+        self.human_joint_index = human_joint_index
 
     def init_skeleton(self):
         # initialize the points
@@ -118,7 +129,18 @@ class ikChain:
             self.backward_points.append(backward_point)
             target_point = backward_point
 
-    def solve(self, target):
+    def py_forward(self):
+        backward_points = self.backward_points[::-1]
+        for i in range(len(self.chain)):
+            # reorient towards the backward chain
+            new_orientation = normalize(backward_points[i+1]-self.points[i])
+            self.chain[i].orientation = new_orientation
+            # change the position of the point at the
+            # end of the link
+            self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
+
+    def solve(self, target, constraints=None):
+        # Check value constraints
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)
