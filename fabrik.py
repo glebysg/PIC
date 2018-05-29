@@ -33,7 +33,17 @@ class ikChain:
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
 
-    def init_skeleton(self):
+    def init_skeleton(self, init_constraints=None):
+        # Check if init_constraints is present when using pose imitation
+        if self.pose_imitation and \
+            (init_constraints is None) or (len(init_constraints)==0) :
+            raise ValueError('the parameter init_constraints cannot \
+                       be empty when using pose imitation')
+        # Create the initial pose
+        if self.pose_imitation:
+            self.init_constraints = init_constraints
+        else:
+            self.init_constraints = None
         # initialize the points
         self.points = self.get_points()
         # draw a box on the base
@@ -65,7 +75,7 @@ class ikChain:
                 if not np.array_equal(self.animation_pos,self.new_pos):
                     self.animation_pos = copy.copy(self.new_pos)
                     #Get the target from the sphere
-                    self.solve(self.animation_pos)
+                    self.solve(self.animation_pos, self.init_constraints)
         def up():
             self.ik_sphere.color = color.red
             self.drag = False
