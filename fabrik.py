@@ -145,23 +145,53 @@ class ikChain:
             # reorient towards the backward chain
             new_orientation = normalize(backward_points[i+1]-self.points[i])
             self.chain[i].orientation = new_orientation
+            # Orient towards the constraints if we are in pose
+            # imitation mode
+            human_links = [link[0] for link in self.pose_constraints]
+            if self.pose_imitation and i in human_links:
+                constraint_index = human_links.index(i)
+                # if the constraint is going into the cube
+                if self.pose_constraints[i][2] == 'in':
+                    # check if the link intercepts the constraint region
+                    # if it does, there is nothing to do
+                    # if it doesnt, find the the side of the sub-cube that
+                    # the link can be projected to. 
+                    pass
+                # if the constraint is going out of the cube
+                else:
+                    pass
+
             # change the position of the point at the
             # end of the link
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
 
     def solve(self, target, constraints=None):
-        # Check value constraints
+        # Initialize constraints
+        self.pose_constraints = None
+        if self.pose_imitation:
+            self.pose_constraints = []
+            # Shoulder
+            self.pose_constraints.append(
+                    (self.human_joint_index[0],constraints[0],'out'))
+            # Elbow
+            self.pose_constraints.append(
+                    (self.human_joint_index[1],constraints[1],'in'))
+            self.pose_constraints.append(
+                    (self.human_joint_index[1]+1,constraints[2],'out'))
+            # Hand
+            self.pose_constraints.append(
+                    (self.human_joint_index[2],constraints[3],'in'))
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)
-        # if the target is reachable
+        # if the target is not reachable
         if (sum([l.length for l in self.chain]) < distance_to_target):
             # Get goal orientation
             goal_orientation = self.target-self.base
             for i in range(len(self.chain)):
                 self.chain[i].orientation = goal_orientation
             self.points = self.get_points()
-        # if the target is not reachable
+        # if the target is reachable
         else:
             # initialize the points
             self.points = self.get_points()
