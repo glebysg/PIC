@@ -32,6 +32,27 @@ class ikChain:
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
+        # Create an empty list for the constraints
+        self.pose_constraints = []
+        # Base parameters for animating the constraints for the pose imitation
+        if pose_imitation:
+            self.base_lenght = 4
+            self.base_offsets = [[-1,1,1],[-1,1,-1],
+                    [1,1,-1],[1,1,1],[-1,-1,1]
+                    [-1,-1,-1],[1,-1,-1],[1,-1,1]]
+
+    def create_constraints(self, constraints):
+        # Shoulder
+        self.pose_constraints.append(
+                (self.human_joint_index[0],constraints[0],'out'))
+        # Elbow
+        self.pose_constraints.append(
+                (self.human_joint_index[1],constraints[1],'in'))
+        self.pose_constraints.append(
+                (self.human_joint_index[1],constraints[2],'out'))
+        # Hand
+        self.pose_constraints.append(
+                (self.human_joint_index[2],constraints[3],'in'))
 
     def init_skeleton(self, init_constraints=None):
         # Check if init_constraints is present when using pose imitation
@@ -41,27 +62,48 @@ class ikChain:
                        be empty when using pose imitation')
         # Create the initial pose
         if self.pose_imitation:
-            self.init_constraints = init_constraints
-        else:
-            self.init_constraints = None
+            self.create_constraints(init_constraints)
+            self.graphic_constraints = []
         # initialize the points
         self.points = self.get_points()
         # draw a box on the base
         self.base_box = box(pos=vec(*self.base), length=10, height=3, width=10)
-        #draw each element in the ik chain
+        # Draw each element in the ik chain
         scene.width = 700
         scene.height = 700
         self.graphic_ik = []
         axis = None
         for index in range(len(self.chain)):
-            # Normalize the orientation o f the ik link
+            # Normalize the orientation of the ik link
             pos = vec(*self.points[index])
             axis = vec(*(normalize(self.chain[index].orientation)*self.chain[index].length))
             joint =  sphere(pos=pos,color=color.green, radius = 4)
             link = cylinder(pos=pos, axis=axis, radius=2)
             self.graphic_ik.append(joint)
             self.graphic_ik.append(link)
-        self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4), axis=axis, color=color.green)
+        # Create the visual constraints
+        prev_joint = -1
+        for index in range(len(self.pose_constraints)):
+            # Create the cubes representing the constraints
+            constraint = self.pose_constraints[index]
+            current_joint = constraint[0]
+            if prev_joint == current_joint:
+                # Get the last constraint and change the color to
+                # reflect the current 'out' constraint
+                self.graphic_constraints[-1][constraint[1]].color = color.orange
+            else:
+                for i in range(len(self.pose_constraints)):
+                    color = color.orange if i == constraint[1] else color.white
+                    constraint_cluster.append(box(pos=vec(0,0,0),
+                            length=base_lenght, height=base_lenght, width=base_lenght,
+                            opacity=0.2, color=color))
+                self.graphic_constraints.append(constraint_cluster)
+                prev_joint = current_joint
+        # Update constraint position
+        self.update_constraints()
+
+        self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
+                axis=axis, color=color.green)
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
         self.animation_pos=copy.copy(self.points[-1])
@@ -75,13 +117,36 @@ class ikChain:
                 if not np.array_equal(self.animation_pos,self.new_pos):
                     self.animation_pos = copy.copy(self.new_pos)
                     #Get the target from the sphere
-                    self.solve(self.animation_pos, self.init_constraints)
+                    self.solve(self.animation_pos)
         def up():
             self.ik_sphere.color = color.red
             self.drag = False
         scene.bind("mousedown", down)
         scene.bind("mousemove", move)
         scene.bind("mouseup", up)
+
+    def update_constraints(self):
+        prev_joint = -1
+        for constraint_index in range(len(self.pose_constraints)):
+            constraint = self.pose_constraints[constraint_index]
+            # Get the position of the joint for the costraint
+            joint_index = constraint[0]
+            # update the index for the constraints only
+            # if the we have changed joints
+            if prev_joint == current_joint:
+                self.graphic_constraintsl[constraint_index][joint_index].color =\
+                        color.orange
+            else:
+                center = self.graphic_ik[joint_index]
+                constraint_cluster = []
+                # Update the positions of each joint arround the center
+                for base_index in range(len(base_offsets)):
+                    color = color.orange if base_index == constraint[1] else color.white
+                    x_off, y_off, z_off = base_offsets[base_index]
+                    offset = vec(base_lenght*x_off, base_lenght*y_off, base_lenght*z_off)
+                    self.graphic_constraintsl[constraint_index][base_index].pos = \
+                            pos=center.pos + vec(base_lenght)
+            prev_joint = current_joint
 
     def draw_debug(self,points,color):
         axis = None
@@ -151,11 +216,12 @@ class ikChain:
             if self.pose_imitation and i in human_links:
                 constraint_index = human_links.index(i)
                 # if the constraint is going into the cube
-                if self.pose_constraints[i][2] == 'in':
+                if self.pose_constraints[i][2] == 'out':
                     # check if the link intercepts the constraint region
                     # if it does, there is nothing to do
+
                     # if it doesnt, find the the side of the sub-cube that
-                    # the link can be projected to. 
+                    # the link can be projected to.
                     pass
                 # if the constraint is going out of the cube
                 else:
@@ -167,20 +233,8 @@ class ikChain:
 
     def solve(self, target, constraints=None):
         # Initialize constraints
-        self.pose_constraints = None
-        if self.pose_imitation:
-            self.pose_constraints = []
-            # Shoulder
-            self.pose_constraints.append(
-                    (self.human_joint_index[0],constraints[0],'out'))
-            # Elbow
-            self.pose_constraints.append(
-                    (self.human_joint_index[1],constraints[1],'in'))
-            self.pose_constraints.append(
-                    (self.human_joint_index[1]+1,constraints[2],'out'))
-            # Hand
-            self.pose_constraints.append(
-                    (self.human_joint_index[2],constraints[3],'in'))
+        if self.pose_imitation & constraints is not None:
+            self.create_constraints(constraints)
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)

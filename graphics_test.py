@@ -18,7 +18,7 @@ wallB = box (pos=vector(0, -side, 0), length=s3,  height=thk, width=s3,  color =
 wallT = box (pos=vector(0,  side, 0), length=s3,  height=thk, width=s3,  color = color.blue)
 wallBK = box(pos=vector(0, 0, -side), length=s2,  height=s2,  width=thk, color = vector(0.7,0.7,0.7))
 
-ball = sphere (color = color.green, radius = 0.4)
+ball = sphere (color = color.green, radius = 0.4, opacity=0.1)
 ball.mass = 1.0
 ball.p = vector (-0.15, -0.23, +0.27)
 
