@@ -2,6 +2,7 @@ import numpy as np
 from utils import normalize, distance, vec_to_np
 from vpython import *
 import copy
+from pprint import pprint as pp
 
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
@@ -36,9 +37,9 @@ class ikChain:
         self.pose_constraints = []
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
-            self.base_lenght = 4
+            self.base_lenght = 6
             self.base_offsets = [[-1,1,1],[-1,1,-1],
-                    [1,1,-1],[1,1,1],[-1,-1,1]
+                    [1,1,-1],[1,1,1],[-1,-1,1],
                     [-1,-1,-1],[1,-1,-1],[1,-1,1]]
 
     def create_constraints(self, constraints):
@@ -92,11 +93,12 @@ class ikChain:
                 # reflect the current 'out' constraint
                 self.graphic_constraints[-1][constraint[1]].color = color.orange
             else:
-                for i in range(len(self.pose_constraints)):
-                    color = color.orange if i == constraint[1] else color.white
+                constraint_cluster = []
+                for i in range(len(self.base_offsets)):
+                    c_color = color.orange if i == constraint[1] else color.white
                     constraint_cluster.append(box(pos=vec(0,0,0),
-                            length=base_lenght, height=base_lenght, width=base_lenght,
-                            opacity=0.2, color=color))
+                            length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
+                            opacity=0.5, color=c_color))
                 self.graphic_constraints.append(constraint_cluster)
                 prev_joint = current_joint
         # Update constraint position
@@ -126,26 +128,29 @@ class ikChain:
         scene.bind("mouseup", up)
 
     def update_constraints(self):
+        pp(self.graphic_constraints)
         prev_joint = -1
+        index_offset = 0
         for constraint_index in range(len(self.pose_constraints)):
             constraint = self.pose_constraints[constraint_index]
             # Get the position of the joint for the costraint
-            joint_index = constraint[0]
+            current_joint = constraint[0]
             # update the index for the constraints only
-            # if the we have changed joints
             if prev_joint == current_joint:
-                self.graphic_constraintsl[constraint_index][joint_index].color =\
+                self.graphic_constraints[constraint_index][current_joint].color =\
                         color.orange
+                index_offset =+ 1
+            # if the we have changed joints
             else:
-                center = self.graphic_ik[joint_index]
-                constraint_cluster = []
+                center = self.graphic_ik[current_joint]
                 # Update the positions of each joint arround the center
-                for base_index in range(len(base_offsets)):
-                    color = color.orange if base_index == constraint[1] else color.white
-                    x_off, y_off, z_off = base_offsets[base_index]
-                    offset = vec(base_lenght*x_off, base_lenght*y_off, base_lenght*z_off)
-                    self.graphic_constraintsl[constraint_index][base_index].pos = \
-                            pos=center.pos + vec(base_lenght)
+                for base_index in range(len(self.base_offsets)):
+                    c_color = color.orange if base_index == constraint[1] else color.white
+                    x_off, y_off, z_off = self.base_offsets[base_index]
+                    offset = vec(self.base_lenght*x_off, self.base_lenght*y_off, self.base_lenght*z_off)
+                    self.graphic_constraints[constraint_index - index_offset][base_index].pos = \
+                            pos=center.pos + offset
+                    self.graphic_constraints[constraint_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
 
     def draw_debug(self,points,color):
