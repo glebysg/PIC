@@ -102,10 +102,10 @@ class ikChain:
                 self.graphic_constraints.append(constraint_cluster)
                 prev_joint = current_joint
         # Update constraint position
-        self.update_constraints()
-
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
                 axis=axis, color=color.green)
+        self.update_constraints()
+
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
         self.animation_pos=copy.copy(self.points[-1])
@@ -128,16 +128,14 @@ class ikChain:
         scene.bind("mouseup", up)
 
     def update_constraints(self):
-        pp([c.pos for c in np.array(self.graphic_constraints).flatten()])
+        print("pose constraints: ", self.pose_constraints)
         prev_joint = -1
         index_offset = 0
         # Reset all the cubes to be white
         for cube_array in self.graphic_constraints:
             for cube in cube_array:
                 cube.color = color.white
-
         # Update the positions and colors of the cubes
-        print("pose constraints: ", self.pose_constraints)
         for constraint_index in range(len(self.pose_constraints)):
             constraint = self.pose_constraints[constraint_index]
             # Get the position of the joint for the costraint
@@ -148,30 +146,31 @@ class ikChain:
             constraint_type = constraint[2]
             # update the index for the constraints only
             if prev_joint == current_joint:
-                print(constraint_index)
-                print ("repeated joint", current_joint)
-                pp(self.graphic_constraints[constraint_index])
+                index_offset =+ 1
                 c_color = color.orange if constraint_type == "out" else color.yellow
                 self.graphic_constraints[constraint_index-index_offset][constraint_cube_index].color =\
                        c_color
-                index_offset =+ 1
             # if the we have changed joints
             else:
-                print(constraint_index)
-                print ("new joint", current_joint)
-                center = self.graphic_ik[current_joint]
+                # Get the center of the cube cluster. The graphic_ik
+                # Variable has the joints and the links, thus, we multiply
+                # by 2 to get to the correct joint.
+
+                # If we are at the last joint
+                if current_joint*2 == len(self.graphic_ik):
+                    center_pos = self.gripper.pos
+                else:
+                    center_pos = self.graphic_ik[current_joint*2].pos
                 # Update the positions of each joint arround the center
                 for base_index in range(len(self.base_offsets)):
-                    if constraint_type == "out":
-                        c_color = color.orange if base_index+1 == constraint[1] else color.white
-                    else:
-                        c_color = color.yellow if base_index+1 == constraint[1] else color.white
-                    print("     cube", base_index+1, "is", c_color)
                     x_off, y_off, z_off = self.base_offsets[base_index]
                     offset = vec(self.base_lenght*x_off, self.base_lenght*y_off, self.base_lenght*z_off)
                     self.graphic_constraints[constraint_index - index_offset][base_index].pos = \
-                            pos=center.pos + offset
-                    self.graphic_constraints[constraint_index - index_offset][base_index].color = c_color
+                            pos=center_pos + offset
+                    # if we need to update the cube color
+                    if base_index == constraint_cube_index:
+                        c_color = color.orange if constraint_type == "out" else color.yellow
+                        self.graphic_constraints[constraint_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
         pp([c.pos for c in np.array(self.graphic_constraints).flatten()])
 
