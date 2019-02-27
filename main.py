@@ -1,4 +1,5 @@
 from vpython import *
+from helpers import draw_reference_frame
 from fabrik import ikLink, ikChain
 
 def create_chain():
@@ -17,6 +18,8 @@ def create_chain():
     return link_chain, human_joint_index, init_constraints
 
 def main():
+    # draw x,y,z
+    draw_reference_frame(-100,0,100,arrow_size=10)
     chain, human_joint_index, init_constraints = create_chain()
     chain = ikChain(chain=chain, pose_imitation=True,
             human_joint_index=human_joint_index)
