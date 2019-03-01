@@ -120,6 +120,7 @@ class ikChain:
                     self.animation_pos = copy.copy(self.new_pos)
                     #Get the target from the sphere
                     self.solve(self.animation_pos)
+                    self.update_constraints()
         def up():
             self.ik_sphere.color = color.red
             self.drag = False
@@ -128,7 +129,6 @@ class ikChain:
         scene.bind("mouseup", up)
 
     def update_constraints(self):
-        print("pose constraints: ", self.pose_constraints)
         prev_joint = -1
         index_offset = 0
         # Reset all the cubes to be white
@@ -172,7 +172,6 @@ class ikChain:
                         c_color = color.orange if constraint_type == "out" else color.yellow
                         self.graphic_constraints[constraint_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
-        pp([c.pos for c in np.array(self.graphic_constraints).flatten()])
 
     def draw_debug(self,points,color):
         axis = None
