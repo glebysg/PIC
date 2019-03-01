@@ -43,6 +43,7 @@ class ikChain:
                     [1,-1,-1],[1,-1,1],[-1,-1,1]]
 
     def create_constraints(self, constraints):
+        constraints = [c - 1 for c in constraints]
         # Shoulder
         self.pose_constraints.append(
                 (self.human_joint_index[0],constraints[0],'out'))
@@ -88,17 +89,13 @@ class ikChain:
             # Create the cubes representing the constraints
             constraint = self.pose_constraints[index]
             current_joint = constraint[0]
-            if prev_joint == current_joint:
-                # Get the last constraint and change the color to
-                # reflect the current 'out' constraint
-                self.graphic_constraints[-1][constraint[1]].color = color.orange
-            else:
+            if prev_joint != current_joint:
                 constraint_cluster = []
                 for i in range(len(self.base_offsets)):
                     c_color = color.orange if i == constraint[1] else color.white
                     constraint_cluster.append(box(pos=vec(0,0,0),
                             length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
-                            opacity=0.5, color=c_color))
+                            opacity=0.5, color=color.white))
                 self.graphic_constraints.append(constraint_cluster)
                 prev_joint = current_joint
         # Update constraint position
@@ -141,7 +138,7 @@ class ikChain:
             # Get the position of the joint for the costraint
             current_joint = constraint[0]
             # Get the constraint cube index
-            constraint_cube_index = constraint[1]-1
+            constraint_cube_index = constraint[1]
             # Get the constraint type
             constraint_type = constraint[2]
             # update the index for the constraints only
@@ -241,6 +238,7 @@ class ikChain:
             human_links = [link[0] for link in self.pose_constraints]
             if self.pose_imitation and i in human_links:
                 constraint_index = human_links.index(i)
+
                 # if the constraint is going into the cube
                 if self.pose_constraints[i][2] == 'out':
                     # check if the link intercepts the constraint region
