@@ -3,6 +3,7 @@ from utils import normalize, distance, vec_to_np
 from vpython import *
 import copy
 from pprint import pprint as pp
+from helpers import *
 
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
@@ -230,26 +231,32 @@ class ikChain:
         backward_points = self.backward_points[::-1]
         for i in range(len(self.chain)):
             # reorient towards the backward chain
-            new_orientation = normalize(backward_points[i+1]-self.points[i])
+            target = backward_points[i+1]
+            new_orientation = normalize(target-self.points[i])
             self.chain[i].orientation = new_orientation
             # Orient towards the constraints if we are in pose
             # imitation mode
             human_links = [link[0] for link in self.pose_constraints]
             if self.pose_imitation and i in human_links:
                 constraint_index = human_links.index(i)
-
+                constr_region = self.pose_constraints[i][1]
+                constr_type = self.pose_constraints[i][2]
                 # if the constraint is going into the cube
-                if self.pose_constraints[i][2] == 'out':
+                if constr_type== 'out':
                     # check if the link intercepts the constraint region
-                    # if it does, there is nothing to do
-
+                    intersects = is_constraint_intersection(
+                            self.points[i],
+                            self.base_offsets,
+                            constr_region,
+                            target)
                     # if it doesnt, find the the side of the sub-cube that
                     # the link can be projected to.
-                    pass
-                # if the constraint is going out of the cube
-                else:
-                    pass
-
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_projection(self.points[i],
+                                self.base_offsets[constraint_index],
+                                target)
+                        new_orientation = normalize(new_orientation)
             # change the position of the point at the
             # end of the link
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
