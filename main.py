@@ -22,7 +22,7 @@ def main():
     draw_reference_frame(-100,0,100,arrow_size=10)
     chain, human_joint_index, init_constraints = create_chain()
     chain = ikChain(chain=chain, pose_imitation=True,
-            human_joint_index=human_joint_index)
+            human_joint_index=human_joint_index,iterations=100)
     chain.init_skeleton(init_constraints=init_constraints)
     # chain.animate()
     # while True:

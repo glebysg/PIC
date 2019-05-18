@@ -11,6 +11,9 @@ def draw_reference_frame(x,y,z,arrow_size=5):
     text(text='Z', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y,z+arrow_size+1))
 
 def is_constraint_intersection(joint_center, offset_matrix, constraint_index, target):
+    # turn the points into vectors
+    target = vec(*target)
+    joint_center = vec(*joint_center)
     # get the angle between the target and the constraint of interest
     # get the constraint vector
     # if we are using 8 cubes, the vectors would point at 45 degrees
@@ -31,8 +34,11 @@ def is_constraint_intersection(joint_center, offset_matrix, constraint_index, ta
     return True
 
 def get_projection(joint_center,constraint_offset, target):
+    # turn the points into vectors
+    target = vec(*target)
+    joint_center = vec(*joint_center)
     combinations = itertools.combinations(range(3),2)
-    min_angle_with_corner = math.pi*2
+    min_offset_angle = math.pi*2
     min_corner = None
     for i,j in combinations:
         # get constraint corner that is closer to the target
@@ -48,15 +54,15 @@ def get_projection(joint_center,constraint_offset, target):
     # First find the normal to the plane to project
     c1 = [0,0,0]
     c1[min_corners[0]] = constraint_offset[min_corners[0]]
-    center_c1 = vec(*c1) - joint_center
+    c1 = vec(*c1) + joint_center
     c2 = [0,0,0]
     c2[min_corners[1]] = constraint_offset[min_corners[1]]
-    center_c1 = vec(*c2) - joint_center
-    normal = center_c1.cross(center_c2)
+    c2 = vec(*c2) + joint_center
+    normal = c1.cross(c2)
     proj = target - (target.dot(normal)/mag2(normal))*normal
     # check if the projection is inside the target constraint
     if (c1.cross(proj)).dot(c1.cross(c2)) >= 0 \
-        and (c.cross(proj)).dot(c2.cross(c1)) >=0:
+        and (c2.cross(proj)).dot(c2.cross(c1)) >=0:
         return proj
     # if it's not, get the closest edge vector and use it
     # as the new orientation

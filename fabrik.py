@@ -222,8 +222,8 @@ class ikChain:
         target_point = self.target
         self.backward_points = [target_point]
         for i in range(len(self.points)-2,-1,-1):
-            to_target = normalize(self.points[i] - target_point)
-            backward_point = target_point + to_target*self.chain[i].length
+            new_orientation = normalize(self.points[i] - target_point)
+            backward_point = target_point + new_orientation*self.chain[i].length
             self.backward_points.append(backward_point)
             target_point = backward_point
 
@@ -236,12 +236,12 @@ class ikChain:
             self.chain[i].orientation = new_orientation
             # Orient towards the constraints if we are in pose
             # imitation mode
-            human_links = [link[0] for link in self.pose_constraints]
-            if self.pose_imitation and i in human_links:
-                constraint_index = human_links.index(i)
-                constr_region = self.pose_constraints[i][1]
-                constr_type = self.pose_constraints[i][2]
-                # if the constraint is going into the cube
+            human_joints = [joint[0] for constr in self.pose_constraints]
+            if self.pose_imitation and i in human_joints:
+                constraint_index = human_joints.index(i)
+                constr_region = self.pose_constraints[constraint_index][1]
+                constr_type = self.pose_constraints[constraint_index][2]
+                # if the constraint is going out of the cube
                 if constr_type== 'out':
                     # check if the link intercepts the constraint region
                     intersects = is_constraint_intersection(
@@ -254,12 +254,49 @@ class ikChain:
                     if not intersects:
                         # Change the orientation to the one of the projection
                         new_orientation = get_projection(self.points[i],
-                                self.base_offsets[constraint_index],
+                                self.base_offsets[constraint_region],
                                 target)
                         new_orientation = normalize(new_orientation)
             # change the position of the point at the
             # end of the link
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
+
+    def py_backward(self):
+        target = self.target
+        self.backward_points = [target]
+        for i in range(len(self.points)-2,-1,-1):
+            new_orientation = normalize(self.points[i] - target)
+            # Orient towards the constraints if we are in pose
+            # imitation mode
+            human_joints = [constr[0] for constr in self.pose_constraints]
+            # if there are constraints for the target
+            if self.pose_imitation and i+1 in human_joints:
+                constraint_index = human_joints.index(i+1)
+                constr_region = self.pose_constraints[constraint_index][1]
+                constr_type = self.pose_constraints[constraint_index][2]
+                # if the constraint is going into the cube
+                if constr_type== 'in':
+                    # check if the link intercepts the constraint region
+                    # since we are going backwards, the constraint region
+                    # is centered at the target, and the target is the
+                    # previous joint (self.point[i])
+                    print(self.points[i], target)
+                    intersects = is_constraint_intersection(
+                            target,
+                            self.base_offsets,
+                            constr_region,
+                            self.points[i])
+                    # if it doesnt, find the the side of the sub-cube that
+                    # the link can be projected to.
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_projection(target,
+                                self.base_offsets[constr_region],
+                                self.points[i])
+                        new_orientation = normalize(new_orientation)
+            backward_point = target + new_orientation*self.chain[i].length
+            self.backward_points.append(backward_point)
+            target = backward_point
 
     def solve(self, target, constraints=None):
         # Initialize constraints
@@ -283,8 +320,12 @@ class ikChain:
             error = distance(self.points[-1],self.target)
             count = 0
             while error > self.tolerance:
-                self.backward()
-                self.forward()
+                if self.pose_imitation:
+                    self.py_backward()
+                    self.py_forward()
+                else:
+                    self.backward()
+                    self.forward()
                 self.draw_chain()
                 error = distance(self.points[-1],self.target)
                 if count > self.iterations:
