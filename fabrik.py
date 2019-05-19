@@ -236,7 +236,7 @@ class ikChain:
             self.chain[i].orientation = new_orientation
             # Orient towards the constraints if we are in pose
             # imitation mode
-            human_joints = [joint[0] for constr in self.pose_constraints]
+            human_joints = [constr[0] for constr in self.pose_constraints]
             if self.pose_imitation and i in human_joints:
                 constraint_index = human_joints.index(i)
                 constr_region = self.pose_constraints[constraint_index][1]
@@ -254,7 +254,7 @@ class ikChain:
                     if not intersects:
                         # Change the orientation to the one of the projection
                         new_orientation = get_projection(self.points[i],
-                                self.base_offsets[constraint_region],
+                                self.base_offsets[constr_region],
                                 target)
                         new_orientation = normalize(new_orientation)
             # change the position of the point at the
@@ -280,7 +280,6 @@ class ikChain:
                     # since we are going backwards, the constraint region
                     # is centered at the target, and the target is the
                     # previous joint (self.point[i])
-                    print(self.points[i], target)
                     intersects = is_constraint_intersection(
                             target,
                             self.base_offsets,

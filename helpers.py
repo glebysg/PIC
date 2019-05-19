@@ -63,14 +63,14 @@ def get_projection(joint_center,constraint_offset, target):
     # check if the projection is inside the target constraint
     if (c1.cross(proj)).dot(c1.cross(c2)) >= 0 \
         and (c2.cross(proj)).dot(c2.cross(c1)) >=0:
-        return proj
+        return proj.value
     # if it's not, get the closest edge vector and use it
     # as the new orientation
     else:
         if diff_angle(c1, target) < diff_angle(c2,target):
-            return c1
+            return c1.value
         else:
-            return c2
+            return c2.value
 
 # The main function is used to test the helper functions
 def main():
