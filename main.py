@@ -27,8 +27,8 @@ def main():
     chain.solve([-10, -70.0, 15.0],init_constraints)
     # chain.solve([-83.8738,34.6046, -2.1450], init_constraints)
     # chain.animate()
-    while True:
-        chain.animate()
+    # while True:
+        # chain.animate()
 
 if __name__ == "__main__":
     main()

@@ -45,6 +45,7 @@ class ikChain:
 
     def create_constraints(self, constraints):
         constraints = [c - 1 for c in constraints]
+        self.pose_constraints = []
         # Shoulder
         self.pose_constraints.append(
                 (self.human_joint_index[0],constraints[0],'out'))
@@ -134,8 +135,8 @@ class ikChain:
             for cube in cube_array:
                 cube.color = color.white
         # Update the positions and colors of the cubes
-        for constraint_index in range(len(self.pose_constraints)):
-            constraint = self.pose_constraints[constraint_index]
+        for constr_index in range(len(self.pose_constraints)):
+            constraint = self.pose_constraints[constr_index]
             # Get the position of the joint for the costraint
             current_joint = constraint[0]
             # Get the constraint cube index
@@ -146,7 +147,7 @@ class ikChain:
             if prev_joint == current_joint:
                 index_offset =+ 1
                 c_color = color.orange if constraint_type == "out" else color.yellow
-                self.graphic_constraints[constraint_index-index_offset][constraint_cube_index].color =\
+                self.graphic_constraints[constr_index-index_offset][constraint_cube_index].color =\
                        c_color
             # if the we have changed joints
             else:
@@ -163,12 +164,12 @@ class ikChain:
                 for base_index in range(len(self.base_offsets)):
                     x_off, y_off, z_off = self.base_offsets[base_index]
                     offset = vec(self.base_lenght*x_off, self.base_lenght*y_off, self.base_lenght*z_off)
-                    self.graphic_constraints[constraint_index - index_offset][base_index].pos = \
+                    self.graphic_constraints[constr_index - index_offset][base_index].pos = \
                             pos=center_pos + offset
                     # if we need to update the cube color
                     if base_index == constraint_cube_index:
                         c_color = color.orange if constraint_type == "out" else color.yellow
-                        self.graphic_constraints[constraint_index - index_offset][base_index].color = c_color
+                        self.graphic_constraints[constr_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
 
     def draw_debug(self,points,color):
@@ -236,14 +237,13 @@ class ikChain:
             # reorient towards the backward chain
             target = backward_points[i+1]
             new_orientation = normalize(target-self.points[i])
-            self.chain[i].orientation = new_orientation
             # Orient towards the constraints if we are in pose
             # imitation mode
             human_joints = [(constr[0],constr[2]) for constr in self.pose_constraints]
             # if the constraint is going out of the cube
             if self.pose_imitation and (i,'out') in human_joints:
-                constraint_index = human_joints.index((i,'out'))
-                constr_region = self.pose_constraints[constraint_index][1]
+                constr_index = human_joints.index((i,'out'))
+                constr_region = self.pose_constraints[constr_index][1]
                 # check if the link intercepts the constraint region
                 intersects = is_constraint_intersection(
                         self.points[i],
@@ -254,32 +254,33 @@ class ikChain:
                 # the link can be projected to.
                 if not intersects:
                     # Change the orientation to the one of the projection
-                    sphere(pos=vec(*self.points[i]), radius=7,color=color.magenta)
-                    sphere(pos=vec(*target), radius=7,color=color.cyan)
-                    new_orientation, normal, c1, c2 = get_projection(self.points[i],
+                    # sphere(pos=vec(*self.points[i]), radius=7,color=color.magenta)
+                    # sphere(pos=vec(*target), radius=7,color=color.cyan)
+                    new_orientation = get_projection(self.points[i],
                             self.base_offsets[constr_region],
                             target)
                     new_orientation = normalize(new_orientation)
-                    arrow(pos=vec(*self.points[i]),
-                        axis=vec(*(new_orientation*70)),
-                        shaftwidth=3,
-                        color=color.orange)
-                    arrow(pos=vec(*self.points[i]),
-                        axis=normal.norm()*80,
-                        shaftwidth=2,
-                        color=color.green)
-                    arrow(pos=vec(*self.points[i]),
-                        axis=c1.norm()*30,
-                        shaftwidth=4,
-                        color=color.blue)
-                    arrow(pos=vec(*self.points[i]),
-                        axis=c2.norm()*30,
-                        shaftwidth=4,
-                        color=color.red)
-                    print("NORMALIZED C1, C2")
-                    print(c1, c2)
+                    # arrow(pos=vec(*self.points[i]),
+                        # axis=vec(*(new_orientation*70)),
+                        # shaftwidth=3,
+                        # color=color.orange)
+                    # arrow(pos=vec(*self.points[i]),
+                        # axis=normal.norm()*80,
+                        # shaftwidth=2,
+                        # color=color.green)
+                    # arrow(pos=vec(*self.points[i]),
+                        # axis=c1.norm()*30,
+                        # shaftwidth=4,
+                        # color=color.blue)
+                    # arrow(pos=vec(*self.points[i]),
+                        # axis=c2.norm()*30,
+                        # shaftwidth=4,
+                        # color=color.red)
+                    # print("NORMALIZED C1, C2")
+                    # print(c1, c2)
             # change the position of the point at the
             # end of the link
+            self.chain[i].orientation = new_orientation
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
 
     def py_backward(self):
@@ -320,7 +321,6 @@ class ikChain:
         self.backward_points = backward_points
 
     def solve(self, target, constraints=None):
-        print(target)
         # Initialize constraints
         if self.pose_imitation and constraints is not None:
             self.create_constraints(constraints)
@@ -344,18 +344,15 @@ class ikChain:
             while error > self.tolerance:
                 if self.pose_imitation:
                     self.backward()
-                    self.draw_debug(self.backward_points[::-1],color.blue)
                     self.py_forward()
-                    # self.draw_debug(self.points,color.yellow)
                 else:
                     self.backward()
                     self.forward()
-                self.draw_chain()
                 error = distance(self.points[-1],self.target)
                 if count > self.iterations:
                         break
                 count += 1
-                break
+        self.draw_chain()
 
     def animate(self):
         rate(100)
