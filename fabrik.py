@@ -99,10 +99,11 @@ class ikChain:
                             opacity=0.5, color=color.white))
                 self.graphic_constraints.append(constraint_cluster)
                 prev_joint = current_joint
-        # Update constraint position
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
                 axis=axis, color=color.green)
-        self.update_constraints()
+        # Update constraint position
+        if self.pose_imitation:
+            self.update_constraints()
 
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
@@ -118,7 +119,6 @@ class ikChain:
                     self.animation_pos = copy.copy(self.new_pos)
                     #Get the target from the sphere
                     self.solve(self.animation_pos)
-                    self.update_constraints()
         def up():
             self.ik_sphere.color = color.red
             self.drag = False
@@ -197,6 +197,8 @@ class ikChain:
         self.gripper.pos = vec(*self.points[-1])
         self.gripper.axis = axis
         self.gripper.size = vec(2,4,4)
+        if self.pose_imitation:
+            self.update_constraints()
 
     def get_points(self):
         points = [self.base]
@@ -210,7 +212,7 @@ class ikChain:
 
     def forward(self):
         backward_points = self.backward_points[::-1]
-        for i in range(len(self.chain)):
+        for i in range(len(self.points)-1):
             # reorient towards the backward chain
             new_orientation = normalize(backward_points[i+1]-self.points[i])
             self.chain[i].orientation = new_orientation
@@ -220,50 +222,69 @@ class ikChain:
 
     def backward(self):
         target_point = self.target
-        self.backward_points = [target_point]
+        backward_points = [target_point]
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target_point)
             backward_point = target_point + new_orientation*self.chain[i].length
-            self.backward_points.append(backward_point)
+            backward_points.append(backward_point)
             target_point = backward_point
+        self.backward_points = backward_points
 
     def py_forward(self):
         backward_points = self.backward_points[::-1]
-        for i in range(len(self.chain)):
+        for i in range(len(self.points)-1):
             # reorient towards the backward chain
             target = backward_points[i+1]
             new_orientation = normalize(target-self.points[i])
             self.chain[i].orientation = new_orientation
             # Orient towards the constraints if we are in pose
             # imitation mode
-            human_joints = [constr[0] for constr in self.pose_constraints]
-            if self.pose_imitation and i in human_joints:
-                constraint_index = human_joints.index(i)
+            human_joints = [(constr[0],constr[2]) for constr in self.pose_constraints]
+            # if the constraint is going out of the cube
+            if self.pose_imitation and (i,'out') in human_joints:
+                constraint_index = human_joints.index((i,'out'))
                 constr_region = self.pose_constraints[constraint_index][1]
-                constr_type = self.pose_constraints[constraint_index][2]
-                # if the constraint is going out of the cube
-                if constr_type== 'out':
-                    # check if the link intercepts the constraint region
-                    intersects = is_constraint_intersection(
-                            self.points[i],
-                            self.base_offsets,
-                            constr_region,
+                # check if the link intercepts the constraint region
+                intersects = is_constraint_intersection(
+                        self.points[i],
+                        self.base_offsets,
+                        constr_region,
+                        target)
+                # if it doesnt, find the the side of the sub-cube that
+                # the link can be projected to.
+                if not intersects:
+                    # Change the orientation to the one of the projection
+                    sphere(pos=vec(*self.points[i]), radius=7,color=color.magenta)
+                    sphere(pos=vec(*target), radius=7,color=color.cyan)
+                    new_orientation, normal, c1, c2 = get_projection(self.points[i],
+                            self.base_offsets[constr_region],
                             target)
-                    # if it doesnt, find the the side of the sub-cube that
-                    # the link can be projected to.
-                    if not intersects:
-                        # Change the orientation to the one of the projection
-                        new_orientation = get_projection(self.points[i],
-                                self.base_offsets[constr_region],
-                                target)
-                        new_orientation = normalize(new_orientation)
+                    new_orientation = normalize(new_orientation)
+                    arrow(pos=vec(*self.points[i]),
+                        axis=vec(*(new_orientation*70)),
+                        shaftwidth=3,
+                        color=color.orange)
+                    arrow(pos=vec(*self.points[i]),
+                        axis=normal.norm()*80,
+                        shaftwidth=2,
+                        color=color.green)
+                    arrow(pos=vec(*self.points[i]),
+                        axis=c1.norm()*30,
+                        shaftwidth=4,
+                        color=color.blue)
+                    arrow(pos=vec(*self.points[i]),
+                        axis=c2.norm()*30,
+                        shaftwidth=4,
+                        color=color.red)
+                    print("NORMALIZED C1, C2")
+                    print(c1, c2)
             # change the position of the point at the
             # end of the link
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
 
     def py_backward(self):
         target = self.target
-        self.backward_points = [target]
+        backward_points = [target]
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target)
             # Orient towards the constraints if we are in pose
@@ -294,10 +315,12 @@ class ikChain:
                                 self.points[i])
                         new_orientation = normalize(new_orientation)
             backward_point = target + new_orientation*self.chain[i].length
-            self.backward_points.append(backward_point)
+            backward_points.append(backward_point)
             target = backward_point
+        self.backward_points = backward_points
 
     def solve(self, target, constraints=None):
+        print(target)
         # Initialize constraints
         if self.pose_imitation and constraints is not None:
             self.create_constraints(constraints)
@@ -320,8 +343,10 @@ class ikChain:
             count = 0
             while error > self.tolerance:
                 if self.pose_imitation:
-                    self.py_backward()
+                    self.backward()
+                    self.draw_debug(self.backward_points[::-1],color.blue)
                     self.py_forward()
+                    # self.draw_debug(self.points,color.yellow)
                 else:
                     self.backward()
                     self.forward()
@@ -330,6 +355,7 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
+                break
 
     def animate(self):
         rate(100)
