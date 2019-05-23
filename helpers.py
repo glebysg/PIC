@@ -33,7 +33,7 @@ def is_constraint_intersection(joint_center, offset_matrix, constraint_index, ta
             return False
     return True
 
-def get_projection(joint_center,constraint_offset, target):
+def get_projection(joint_center,constraint_offset, target, tolerance):
     # turn the points into vectors
     target = vec(*target)
     joint_center = vec(*joint_center)
