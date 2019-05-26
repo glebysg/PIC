@@ -33,13 +33,30 @@ def is_constraint_intersection(joint_center, offset_matrix, constraint_index, ta
             return False
     return True
 
-def get_projection(joint_center,constraint_offset, target, tolerance):
+def get_projection(joint_center,offset_matrix, constraint_index, target, tolerance=0):
     # turn the points into vectors
     target = vec(*target)
     joint_center = vec(*joint_center)
     combinations = itertools.combinations(range(3),2)
     min_offset_angle = math.pi*2
     min_corner = None
+    joint_constraint = offset_matrix[constraint_index]
+    constraint_offset = joint_constraint
+    # Find the constraint that is closest to the target,
+    # given the current tolerance
+    min_angle = diff_angle(vec(*joint_constraint), target)
+    if tolerance > 0:
+        for offset in offset_matrix:
+            # skip the neighboors that are not within
+            # the tolerance level
+            if sum(abs((offset - joint_constraint))) > tolerance*2:
+                continue
+            constraint_vec =  joint_center + vector(*offset)
+            angle = diff_angle(constraint_vec, target)
+            if  angle < min_angle:
+                constraint_offset = offset
+                min_angle = angle
+
     for i,j in combinations:
         # get constraint corner that is closer to the target
         offset = [0,0,0]

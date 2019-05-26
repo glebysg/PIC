@@ -39,9 +39,10 @@ class ikChain:
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
             self.base_lenght = 6
-            self.base_offsets = [[-1,1,-1],[1,1,-1],
+            base_offsets = [[-1,1,-1],[1,1,-1],
                     [1,1,1],[-1,1,1],[-1,-1,-1],
                     [1,-1,-1],[1,-1,1],[-1,-1,1]]
+            self.base_offsets = np.array(base_offsets)
             self.soften = soften
 
     def create_constraints(self, constraints):
@@ -256,7 +257,8 @@ class ikChain:
                 if not intersects:
                     # Change the orientation to the one of the projection
                     new_orientation = get_projection(self.points[i],
-                            self.base_offsets[constr_region],
+                            self.base_offsets,
+                            constr_region,
                             target,
                             self.soften)
                     new_orientation = normalize(new_orientation)
@@ -292,7 +294,8 @@ class ikChain:
                 if not intersects:
                     # Change the orientation to the one of the projection
                     new_orientation = get_projection(target,
-                            self.base_offsets[constr_region],
+                            self.base_offsets,
+                            constr_region,
                             self.points[i],
                             self.soften)
                     new_orientation = normalize(new_orientation)
