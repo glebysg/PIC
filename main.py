@@ -14,7 +14,7 @@ def create_chain():
     link_chain.append(ikLink(length=36.435,orientation=[-1,0,0]))
     link_chain.append(ikLink(length=37.429,orientation=[-1,0,0]))
     link_chain.append(ikLink(length=36.830,orientation=[-1,0,0]))
-    human_joint_index = [0,3,4]
+    human_joint_index = [0,2,4]
     init_constraints = [8,3,7,6]
     return link_chain, human_joint_index, init_constraints
 
