@@ -1,6 +1,20 @@
 from vpython import *
 import math
 import itertools
+import numpy as np
+
+def normalize(vector):
+    return np.array(vector,dtype=float)/np.linalg.norm(vector)
+
+def distance(vector1, vector2):
+    return np.linalg.norm(vector1-vector2)
+
+def vec_to_np(vector, dtype):
+    return np.array([
+      vector.x,
+      vector.y,
+      vector.z,
+      ], dtype=dtype)
 
 def draw_reference_frame(x,y,z,arrow_size=5):
     arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.red)
@@ -44,7 +58,7 @@ def get_projection(joint_center,offset_matrix, constraint_index, target, toleran
     constraint_offset = joint_constraint
     # Find the constraint that is closest to the target,
     # given the current tolerance
-    min_angle = diff_angle(vec(*joint_constraint), target)
+    min_angle = diff_angle(joint_center +vec(*joint_constraint), target)
     if tolerance > 0:
         for offset in offset_matrix:
             # skip the neighboors that are not within
@@ -90,6 +104,35 @@ def get_projection(joint_center,offset_matrix, constraint_index, target, toleran
             return c1.value#, normal, c1, c2
         else:
             return c2.value#, normal, c1, c2
+
+def get_constraint(center, target, constraint_matrix):
+    link = vec(*target) - vec(center)
+    min_angle = math.pi*2
+    constraint_index = None
+    for i in range(len(constraint_matrix)):
+        constraint_vec =  joint_center + vector(*constraint_matrix[i])
+        angle = diff_angle(constraint_vec, link)
+        if angle < min_angle:
+            constraint_index = i
+            min_angle = angle
+    return constraint_index
+
+def draw_debug(points,color,opacity=1):
+    axis = None
+    # self.ik_sphere.pos = vec(*self.target)
+    # self.ik_sphere.radius = 5
+    chain = []
+    for index in range(len(points)-1):
+        # Normalize the orientation o f the ik link
+        pos = vec(*points[index])
+        length = distance(points[index],points[index+1])
+        orientation = normalize(points[index+1]-points[index])
+        axis = vec(*(orientation*length))
+        joint =  sphere(pos=pos,color=color, radius = 4, opacity=opacity)
+        link = cylinder(pos=pos, axis=axis, color=color,radius=2,opacity=opacity)
+        chain.append(joint)
+        chain.append(link)
+    return chain
 
 # The main function is used to test the helper functions
 def main():

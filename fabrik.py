@@ -1,5 +1,4 @@
 import numpy as np
-from utils import normalize, distance, vec_to_np
 from vpython import *
 import copy
 from pprint import pprint as pp
@@ -13,6 +12,7 @@ class ikLink:
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
             pose_imitation=False, human_joint_index=None, soften=0):
+        # initialize the canvas
         # param constraint checkup
         if pose_imitation and human_joint_index is None:
             raise ValueError('the parameter human_joint_index must be \
@@ -75,8 +75,8 @@ class ikChain:
         # draw a box on the base
         self.base_box = box(pos=vec(*self.base), length=10, height=3, width=10)
         # Draw each element in the ik chain
-        scene.width = 700
-        scene.height = 700
+        scene.width = 1200
+        scene.height = 800
         self.graphic_ik = []
         axis = None
         for index in range(len(self.chain)):
@@ -173,19 +173,6 @@ class ikChain:
                         c_color = color.orange if constraint_type == "out" else color.yellow
                         self.graphic_constraints[constr_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
-
-    def draw_debug(self,points,color):
-        axis = None
-        self.ik_sphere.pos = vec(*self.target)
-        self.ik_sphere.radius = 5
-        for index in range(len(points)-1):
-            # Normalize the orientation o f the ik link
-            pos = vec(*points[index])
-            length = distance(points[index],points[index+1])
-            orientation = normalize(points[index+1]-points[index])
-            axis = vec(*(orientation*length))
-            joint =  sphere(pos=pos,color=color, radius = 4)
-            link = cylinder(pos=pos, axis=axis, color=color,radius=2)
 
     def draw_chain(self):
         axis = None
