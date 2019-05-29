@@ -14,8 +14,8 @@ skel_path = './data/data1_skel.txt'
 ts_path = './data/data1_skelts.txt'
 skel_description = './data/'
 ignore_secs = 2
-offset = vec(11, -5, 176)
-scale = 2
+offset = vec(16, -5, 176)
+scale = 1.5
 ###############################
 
 

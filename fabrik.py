@@ -39,10 +39,7 @@ class ikChain:
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
             self.base_lenght = 6
-            base_offsets = [[-1,1,-1],[1,1,-1],
-                    [1,1,1],[-1,1,1],[-1,-1,-1],
-                    [1,-1,-1],[1,-1,1],[-1,-1,1]]
-            self.base_offsets = np.array(base_offsets)
+            self.base_offsets = get_base_offsets()
             self.soften = soften
 
     def create_constraints(self, constraints):

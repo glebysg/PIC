@@ -1,12 +1,12 @@
 from vpython import *
-from helpers import draw_reference_frame, draw_debug
+from helpers import *
 from fabrik import ikLink, ikChain
 from copy import deepcopy
 from datetime import timedelta
 import numpy as np
 
 ########## PARAMS ##############
-soften = 2
+soften = 3
 pose_imitation = True
 human_joint_index = [0,2,4]
 init_constraints = [8,3,7,6]
@@ -14,8 +14,8 @@ skel_path = './data/data1_skel.txt'
 ts_path = './data/data1_skelts.txt'
 skel_description = './data/'
 ignore_secs = 2
-offset = vec(11, -5, 176)
-scale = 2
+offset = vec(16, -5, 176)
+scale =1.5
 ###############################
 
 
@@ -91,6 +91,8 @@ def keyInput(keypress):
     global right_h_joints
     global offset
     global scale
+    global arm_l
+    global arm_r
     rate(100)
     s = keypress.key # get keyboard info
     if len(s) == 1:
@@ -132,10 +134,20 @@ def keyInput(keypress):
             r_constraints =[]
             for joint_index in range(len(human_l)-1):
                 # get the "out" constraint
+                out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
+                out_r_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
                 # get the "in" constraint
-
-
-
+                in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
+                in_r_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
+                # append to the constraint list
+                l_constraints.append(out_l_const +1)
+                l_constraints.append(in_l_const +1)
+                r_constraints.append(out_r_const +1)
+                r_constraints.append(in_r_const +1)
+            print (human_l[-1]*scale)
+            print (offset.value)
+            arm_l.solve(human_l[-1]*scale +np.array(offset.value)*scale, l_constraints)
+            arm_r.solve(human_r[-1]*scale +np.array(offset.value)*scale, r_constraints)
 
         elif s == 'p':
             print("Offset:", offset)

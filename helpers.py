@@ -3,6 +3,12 @@ import math
 import itertools
 import numpy as np
 
+def get_base_offsets():
+    base_offsets = [[-1,1,-1],[1,1,-1],
+            [1,1,1],[-1,1,1],[-1,-1,-1],
+            [1,-1,-1],[1,-1,1],[-1,-1,1]]
+    return np.array(base_offsets)
+
 def normalize(vector):
     return np.array(vector,dtype=float)/np.linalg.norm(vector)
 
@@ -106,11 +112,12 @@ def get_projection(joint_center,offset_matrix, constraint_index, target, toleran
             return c2.value#, normal, c1, c2
 
 def get_constraint(center, target, constraint_matrix):
-    link = vec(*target) - vec(center)
+    center = vec(*center)
+    link = vec(*target) - center
     min_angle = math.pi*2
     constraint_index = None
     for i in range(len(constraint_matrix)):
-        constraint_vec =  joint_center + vector(*constraint_matrix[i])
+        constraint_vec =  center + vector(*constraint_matrix[i])
         angle = diff_angle(constraint_vec, link)
         if angle < min_angle:
             constraint_index = i
@@ -147,7 +154,6 @@ def main():
     print("The answers for intersection  should be True, True, False")
     for target in targets:
         print(is_constraint_intersection(center, offsets, c_index, target))
-
 
 if __name__ == "__main__":
     # execute only if run as a script
