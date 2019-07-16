@@ -294,38 +294,33 @@ class ikChain:
             self.create_constraints(constraints)
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
-        # distance_to_target = np.linalg.norm(self.target-self.base)
+        distance_to_target = np.linalg.norm(self.target-self.base)
         # if the target is not reachable
-        # if (sum([l.length for l in self.chain]) < distance_to_target):
-            # # Get goal orientation
-            # goal_orientation = self.target-self.base
-            # for i in range(len(self.chain)):
-                # self.chain[i].orientation = goal_orientation
-            # self.points = self.get_points()
-        # if the target is reachable
-        # else:
-            # initialize the points
-        self.points = self.get_points()
-        # get distance between target and goal
-        error = distance(self.points[-1],self.target)
-        count = 0
-        while error > self.tolerance:
-            if self.pose_imitation:
-                self.py_backward()
-                self.py_forward()
-            else:
-                self.backward()
-                self.forward()
-            error = distance(self.points[-1],self.target)
-            if count > self.iterations:
-                    break
-            count += 1
-        # if the error is too high do not move the chain,
-        # because the object is not reachable
-        if error < self.tolerance:
-            self.draw_chain()
+        if (sum([l.length for l in self.chain]) < distance_to_target)\
+           and not self.pose_imitation:
+            # Get goal orientation
+            goal_orientation = self.target-self.base
+            for i in range(len(self.chain)):
+                self.chain[i].orientation = goal_orientation
+            self.points = self.get_points()
         else:
-            return
+            # initialize the points
+            self.points = self.get_points()
+            # get distance between target and goal
+            error = distance(self.points[-1],self.target)
+            count = 0
+            while error > self.tolerance:
+                if self.pose_imitation:
+                    self.py_backward()
+                    self.py_forward()
+                else:
+                    self.backward()
+                    self.forward()
+                error = distance(self.points[-1],self.target)
+                if count > self.iterations:
+                        break
+                count += 1
+        self.draw_chain()
 
     def animate(self):
         rate(100)

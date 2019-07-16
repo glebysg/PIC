@@ -6,11 +6,11 @@ from datetime import timedelta
 import numpy as np
 
 ########## PARAMS ##############
-soften = 3
+soften = 0
 pose_imitation = True
 human_joint_index = [0,2,4]
 init_constraints = [8,3,7,6]
-skel_path = './data/data1_skel.txt'
+skel_path = './data/smooth_data_06.txt'
 ts_path = './data/data1_skelts.txt'
 skel_description = './data/'
 ignore_secs = 2
@@ -152,8 +152,6 @@ def keyInput(keypress):
         elif s == 'p':
             print("Offset:", offset)
             print("Scale:", scale)
-
-
 
 scene.bind('keydown', keyInput)
 

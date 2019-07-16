@@ -7,7 +7,7 @@ import numpy as np
 
 ########## PARAMS ##############
 soften = 3
-pose_imitation = True
+pose_imitation = False
 human_joint_index = [0,2,4]
 init_constraints = [8,3,7,1]
 ###############################
