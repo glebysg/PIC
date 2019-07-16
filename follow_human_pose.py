@@ -14,8 +14,10 @@ skel_path = './data/smooth_data_06.txt'
 ts_path = './data/data1_skelts.txt'
 skel_description = './data/'
 ignore_secs = 2
-offset = vec(16, -5, 176)
-scale =1.5
+# offset = vec(16, -5, 176)
+# scale = 1.5
+offset = vec(10, -3, 176)
+scale = 2.25
 ###############################
 
 
@@ -75,7 +77,7 @@ human_l = []
 human_r = []
 human_l_chain = []
 human_r_chain = []
-skel_reader = open('./data/data1_skel.txt', 'r')
+skel_reader = open(skel_path, 'r')
 
 for i in range(line_counter):
     skel_reader.readline()

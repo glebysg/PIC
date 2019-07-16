@@ -1,26 +1,28 @@
 from vpython import *
-from helpers import draw_reference_frame, draw_debug
+from helpers import *
 from fabrik import ikLink, ikChain
 from copy import deepcopy
 from datetime import timedelta
 import numpy as np
+from PIL import Image
 
 ########## PARAMS ##############
-soften = 2
+# IMPORTANT: the distance units are in
+# centimeters for rendering purposes
+soften = 0
 pose_imitation = True
 human_joint_index = [0,2,4]
 init_constraints = [8,3,7,6]
-skel_path = './data/data1_skel.txt'
+skel_path = './data/smooth_data_06.txt'
 ts_path = './data/data1_skelts.txt'
+pad_path  = "./simulation/textures/pad.jpg"
 skel_description = './data/'
-ignore_secs = 25
+ignore_secs = 20
 # offset = vec(16, -5, 176)
-# scale = 1.5
+# scale =1.5
 offset = vec(10, -3, 176)
-pad_offset = vec(11, -27, 34)
 scale = 2.25
 ###############################
-
 
 left_chain = []
 right_chain = []
@@ -36,6 +38,7 @@ right_chain.append(ikLink(length=36.435,orientation=[-1,0,0]))
 right_chain.append(ikLink(length=37.429,orientation=[-1,0,0]))
 right_chain.append(ikLink(length=36.830,orientation=[-1,0,0]))
 ########################################################
+
 
 # Ignore the first <ignore_seconds> seconds
 line_counter = 0
@@ -70,12 +73,10 @@ arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 
-############# assebly pieces ###########################
-pad_path  = "./simulation/textures/pad.jpg"
-pad = box(pos=vec(0, 0, 0), length=30*scale, height=3*scale,
+################### incision pad  ######################
+pad = box(pos=vec(11, -27, 34)*scale, length=30*scale, height=3*scale,
         width=15*scale, texture=pad_path)
 ########################################################
-
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
 # with open(skel_path, 'r') as skel_file:
@@ -86,7 +87,6 @@ human_r = []
 human_l_chain = []
 human_r_chain = []
 skel_reader = open('./data/data1_skel.txt', 'r')
-robot = True
 
 for i in range(line_counter):
     skel_reader.readline()
@@ -101,41 +101,13 @@ def keyInput(keypress):
     global left_h_joints
     global right_h_joints
     global offset
-    global pad_offset
     global scale
-    global robot
-    rate(30)
+    global arm_l
+    global arm_r
+    rate(100)
     s = keypress.key # get keyboard info
     if len(s) == 1:
-        if s == 'r':
-            robot = not robot
-        if s == 'x':
-                direction = vec(1,0,0)
-        elif s == 'y':
-            direction = vec(0,1,0)
-        elif s == 'z':
-            direction = vec(0,0,1)
-        elif direction is not None \
-            and (s == 'l' or s == 'i'):
-            if robot:
-                offset += direction
-                for elem_l, elem_r in zip(human_l_chain,human_r_chain):
-                    elem_l.pos = elem_l.pos + direction*scale
-                    elem_r.pos = elem_r.pos + direction*scale
-            else:
-                pad_offset += direction
-                pad.pos = pad.pos + direction*scale
-        elif direction is not None \
-            and (s == 'j' or s == 'k'):
-            if robot:
-                offset -= direction
-                for elem_l, elem_r in zip(human_l_chain,human_r_chain):
-                    elem_l.pos = elem_l.pos - direction*scale
-                    elem_r.pos = elem_r.pos - direction*scale
-            else:
-                pad_offset -= direction
-                pad.pos = pad.pos - direction*scale
-        elif s == 'n' or s== 'b' or s=='s':
+        if s == 'n' or s== 'b' or s=='s':
             if s == 'n':
                 data_point = np.array(skel_reader.readline().split(), dtype=float)
                 human_l = []
@@ -147,8 +119,8 @@ def keyInput(keypress):
                     human_r.append([-data_point[r_index*3],
                             data_point[r_index*3+1],
                             -data_point[r_index*3+2]])
-                human_l = np.array(human_l)
-                human_r = np.array(human_r)
+                human_l = np.array(human_l)*100
+                human_r = np.array(human_r)*100
             elif s == 'b':
                 scale += 0.1
             elif s == 's':
@@ -162,17 +134,35 @@ def keyInput(keypress):
             del human_l_chain[:]
             del human_r_chain[:]
             # draw a new element
-            human_l_chain = draw_debug(human_l*100*scale, color.yellow)
-            human_r_chain = draw_debug(human_r*100*scale, color.yellow)
+            human_l_chain = draw_debug(human_l*scale, color.yellow,opacity=0.5)
+            human_r_chain = draw_debug(human_r*scale, color.yellow,opacity=0.5)
             for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                 elem_l.pos = (elem_l.pos + offset*scale)
                 elem_r.pos = (elem_r.pos + offset*scale)
+
+            # Get the pose of the new element
+            l_constraints =[]
+            r_constraints =[]
+            for joint_index in range(len(human_l)-1):
+                # get the "out" constraint
+                out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
+                out_r_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
+                # get the "in" constraint
+                in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
+                in_r_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
+                # append to the constraint list
+                l_constraints.append(out_l_const +1)
+                l_constraints.append(in_l_const +1)
+                r_constraints.append(out_r_const +1)
+                r_constraints.append(in_r_const +1)
+            print (human_l[-1]*scale)
+            print (offset.value)
+            arm_l.solve(human_l[-1]*scale +np.array(offset.value)*scale, l_constraints)
+            arm_r.solve(human_r[-1]*scale +np.array(offset.value)*scale, r_constraints)
+
         elif s == 'p':
             print("Offset:", offset)
-            print("Pad Offset:", pad_offset)
             print("Scale:", scale)
-
-
 
 scene.bind('keydown', keyInput)
 
