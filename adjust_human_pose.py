@@ -1,41 +1,36 @@
 from vpython import *
 from helpers import draw_reference_frame, draw_debug
-from fabrik import ikLink, ikChain
+from fabrik import ikLink, ikChain, read_arm
 from copy import deepcopy
 from datetime import timedelta
 import numpy as np
+import json
 
 ########## PARAMS ##############
 soften = 2
+robot = "yumi"
 pose_imitation = True
-human_joint_index = [0,2,4]
-init_constraints = [8,3,7,6]
 skel_path = './data/data1_skel.txt'
 ts_path = './data/data1_skelts.txt'
 skel_description = './data/'
+arm_path = './simulation/arms/'+robot+'.txt'
+robot_config_path = './simulation/arms/'+robot+'_config.json'
 ignore_secs = 25
-# offset = vec(16, -5, 176)
-# scale = 1.5
-offset = vec(10, -3, 176)
-pad_offset = vec(11, -27, 34)
-scale = 2.25
+# ignore_secs = 0
 ###############################
+# read robot config
+config_reader = open(robot_config_path)
+robot_config = json.load(config_reader)
+base = robot_config["base"]
+human_joint_index = robot_config["human_joint"]
+init_constraints = robot_config["constraints"]
+offset = vec(*robot_config["offset"])
+pad_offset = vec(*robot_config["pad_offset"])
+scale = robot_config["scale"]
 
 
-left_chain = []
-right_chain = []
-
-########## Simplified baxter ############################
-left_chain.append(ikLink(length=6.9,orientation=[1,0,0]))
-left_chain.append(ikLink(length=36.435,orientation=[1,0,0]))
-left_chain.append(ikLink(length=37.429,orientation=[1,0,0]))
-left_chain.append(ikLink(length=36.830,orientation=[1,0,0]))
-
-right_chain.append(ikLink(length=6.9,orientation=[-1,0,0]))
-right_chain.append(ikLink(length=36.435,orientation=[-1,0,0]))
-right_chain.append(ikLink(length=37.429,orientation=[-1,0,0]))
-right_chain.append(ikLink(length=36.830,orientation=[-1,0,0]))
-########################################################
+########## Simplified robot ############################
+left_chain, right_chain = read_arm(arm_path)
 
 # Ignore the first <ignore_seconds> seconds
 line_counter = 0
@@ -61,7 +56,7 @@ draw_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=20, soften=soften)
-arm_l = ikChain(base=[55.6,0,0], chain=left_chain, pose_imitation=pose_imitation,
+arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=20, soften=soften)
 arm_r.init_skeleton(init_constraints=init_constraints)
@@ -72,7 +67,7 @@ arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ############# assebly pieces ###########################
 pad_path  = "./simulation/textures/pad.jpg"
-pad = box(pos=vec(0, 0, 0), length=30*scale, height=3*scale,
+pad = box(pos=pad_offset, length=30*scale, height=3*scale,
         width=15*scale, texture=pad_path)
 ########################################################
 
@@ -87,6 +82,7 @@ human_l_chain = []
 human_r_chain = []
 skel_reader = open('./data/data1_skel.txt', 'r')
 robot = True
+data_count = 0
 
 for i in range(line_counter):
     skel_reader.readline()
@@ -104,6 +100,7 @@ def keyInput(keypress):
     global pad_offset
     global scale
     global robot
+    global data_count
     rate(30)
     s = keypress.key # get keyboard info
     if len(s) == 1:
@@ -137,6 +134,7 @@ def keyInput(keypress):
                 pad.pos = pad.pos - direction*scale
         elif s == 'n' or s== 'b' or s=='s':
             if s == 'n':
+                data_count += 1
                 data_point = np.array(skel_reader.readline().split(), dtype=float)
                 human_l = []
                 human_r = []
@@ -171,6 +169,7 @@ def keyInput(keypress):
             print("Offset:", offset)
             print("Pad Offset:", pad_offset)
             print("Scale:", scale)
+            print("Datapoint:", data_count)
 
 
 

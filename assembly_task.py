@@ -144,11 +144,11 @@ def keyInput(keypress):
             r_constraints =[]
             for joint_index in range(len(human_l)-1):
                 # get the "out" constraint
-                out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
-                out_r_const = get_constraint(human_l[joint_index],human_l[joint_index+1],get_base_offsets())
+                out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],arm_l.get_base_offsets())
+                out_r_const = get_constraint(human_r[joint_index],human_r[joint_index+1],arm_r.get_base_offsets())
                 # get the "in" constraint
-                in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
-                in_r_const = get_constraint(human_l[joint_index+1],human_l[joint_index],get_base_offsets())
+                in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],arm_l.get_base_offsets())
+                in_r_const = get_constraint(human_r[joint_index+1],human_r[joint_index],arm_r.get_base_offsets())
                 # append to the constraint list
                 l_constraints.append(out_l_const +1)
                 l_constraints.append(in_l_const +1)

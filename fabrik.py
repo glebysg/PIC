@@ -4,6 +4,7 @@ import copy
 from pprint import pprint as pp
 from helpers import *
 
+
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
         self.length = length
@@ -39,8 +40,14 @@ class ikChain:
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
             self.base_lenght = 6
-            self.base_offsets = get_base_offsets()
+            self.base_offsets = self.get_base_offsets()
             self.soften = soften
+
+    def get_base_offsets(self):
+        base_offsets = [[-1,1,-1],[1,1,-1],
+                [1,1,1],[-1,1,1],[-1,-1,-1],
+                [1,-1,-1],[1,-1,1],[-1,-1,1]]
+        return np.array(base_offsets)
 
     def create_constraints(self, constraints):
         constraints = [c - 1 for c in constraints]
@@ -320,6 +327,7 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
+        self.gripper.pos = vec(*self.points[-1])
         self.draw_chain()
 
     def animate(self):
@@ -329,3 +337,18 @@ class ikChain:
             # Animate the solved ik chain
             self.draw_chain()
 
+# Helper function for reading arms
+# create ik chain from file
+# the file must be in the following format:
+# left-link-len, left-x-orientation, left-y-orientation,
+# left-z-orientation, right-link-len...same for the right arm
+# each line is a link
+# returns two list of links, one for each arm
+def read_arm(path):
+    left_chain = []
+    right_chain = []
+    links = np.loadtxt(path, delimiter=",")
+    for link in links:
+        left_chain.append(ikLink(length=link[0],orientation=link[1:4]))
+        right_chain.append(ikLink(length=link[4],orientation=link[5:8]))
+    return left_chain, right_chain

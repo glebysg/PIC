@@ -3,17 +3,14 @@ import math
 import itertools
 import numpy as np
 
-def get_base_offsets():
-    base_offsets = [[-1,1,-1],[1,1,-1],
-            [1,1,1],[-1,1,1],[-1,-1,-1],
-            [1,-1,-1],[1,-1,1],[-1,-1,1]]
-    return np.array(base_offsets)
-
 def normalize(vector):
     return np.array(vector,dtype=float)/np.linalg.norm(vector)
 
 def distance(vector1, vector2):
-    return np.linalg.norm(vector1-vector2)
+    if type(vector1).__name__ == 'vector':
+        return np.linalg.norm(np.array((vector1-vector2).value))
+    else:
+        return np.linalg.norm(vector1-vector2)
 
 def vec_to_np(vector, dtype):
     return np.array([
@@ -154,6 +151,18 @@ def main():
     print("The answers for intersection  should be True, True, False")
     for target in targets:
         print(is_constraint_intersection(center, offsets, c_index, target))
+
+def get_robot_angle(chain, joint_index):
+    shoulder_joint = chain.points[joint_index[0]]
+    elbow_joint = chain.points[joint_index[1]]
+    wrist_joint = chain.points[joint_index[2]]
+    # Get the shoulder link pointing towards the shoulder
+    shoulder = vec(*(shoulder_joint-elbow_joint))
+    # Get the elbow link pointing towards the wrist
+    elbow = vec(*(wrist_joint - elbow_joint))
+    angle = diff_angle(shoulder,elbow)
+    pose_dist = np.linalg.norm((shoulder - elbow).value)
+    return angle, pose_dist
 
 if __name__ == "__main__":
     # execute only if run as a script

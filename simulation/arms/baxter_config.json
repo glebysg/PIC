@@ -1,0 +1,8 @@
+{
+    "base":[55.6,0,0],
+    "human_joint":[0,2,4],
+    "constraints":[8,3,7,6],
+    "offset":[10, -3, 176],
+    "scale": 2.10,
+    "pad_offset":[25, -60, 67]
+}
