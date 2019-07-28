@@ -7,7 +7,9 @@ import numpy as np
 from PIL import Image
 from time import sleep
 import json
+import os
 
+current_dir = os.getcwd()
 ########## PARAMS ##############
 # IMPORTANT: the distance units are in
 # centimeters for rendering purposes
@@ -17,6 +19,7 @@ pose_imitation = True
 skel_path = './data/smooth_data_06.txt'
 ts_path = './data/data1_skelts.txt'
 task_path = './simulation/data_points/incision_1.txt'
+pad_path  = "./simulation/textures/pad.jpg"
 skel_description = './data/'
 arm_path = './simulation/arms/'+robot+'.txt'
 robot_config_path = './simulation/arms/'+robot+'_config.json'
@@ -40,6 +43,7 @@ left_chain, right_chain = read_arm(arm_path)
 left_h_joints = [4,5,6]
 right_h_joints = [8,9,10]
 
+
 # draw x,y,z
 # initialize new bigger canvas
 # scene = canvas(title='Coaching Gym', width=1200, height=800)
@@ -56,7 +60,6 @@ arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ################### incision pad  ######################
-pad_path  = "./simulation/textures/pad.jpg"
 pad = box(pos=pad_offset, length=30*scale, height=3*scale,
         width=15*scale, texture=pad_path)
 ########################################################
@@ -161,6 +164,8 @@ for init_point, end_point in task_datapoints:
     print("POSE ANGLE:", angles)
     print("POSE DISTANCES:", distances)
     print("POSE F1:", 2*(angles*distances)/(angles+distances))
+
+exit()
 
     # Get shoulder wrist distance
     ### For the human arms
