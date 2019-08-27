@@ -7,16 +7,19 @@ import numpy as np
 import json
 
 ########## PARAMS ##############
-soften = 2
-robot = "yumi"
+soften = 3
+robot = "baxter"
+data_version = '2'
+task = 'incision'
 pose_imitation = True
-skel_path = './data/data1_skel.txt'
-ts_path = './data/data1_skelts.txt'
+skel_path = './data/smooth_'+task+'_skel.txt'
+ts_path = './data/'+task+'_skelts.txt'
 skel_description = './data/'
 arm_path = './simulation/arms/'+robot+'.txt'
-robot_config_path = './simulation/arms/'+robot+'_config.json'
-ignore_secs = 25
-# ignore_secs = 0
+robot_config_path = './simulation/arms/'+robot+'_config_'\
+                    +task+data_version+'.json'
+# ignore_secs = 25
+ignore_secs = 0
 ###############################
 # read robot config
 config_reader = open(robot_config_path)
@@ -80,7 +83,7 @@ human_l = []
 human_r = []
 human_l_chain = []
 human_r_chain = []
-skel_reader = open('./data/data1_skel.txt', 'r')
+skel_reader = open(skel_path, 'r')
 robot = True
 data_count = 0
 
@@ -115,12 +118,12 @@ def keyInput(keypress):
         elif direction is not None \
             and (s == 'l' or s == 'i'):
             if robot:
-                offset += direction
+                offset += direction*scale
                 for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                     elem_l.pos = elem_l.pos + direction*scale
                     elem_r.pos = elem_r.pos + direction*scale
             else:
-                pad_offset += direction
+                pad_offset += direction*scale
                 pad.pos = pad.pos + direction*scale
         elif direction is not None \
             and (s == 'j' or s == 'k'):
@@ -130,7 +133,7 @@ def keyInput(keypress):
                     elem_l.pos = elem_l.pos - direction*scale
                     elem_r.pos = elem_r.pos - direction*scale
             else:
-                pad_offset -= direction
+                pad_offset -= direction*scale
                 pad.pos = pad.pos - direction*scale
         elif s == 'n' or s== 'b' or s=='s':
             if s == 'n':

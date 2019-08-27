@@ -164,6 +164,23 @@ def get_robot_angle(chain, joint_index):
     pose_dist = np.linalg.norm((shoulder - elbow).value)
     return angle, pose_dist
 
+# receives a nxm array of points,
+# where n = m = 3 and n is the number
+# of points and m is the number of dimentions (3)
+def get_plane(points):
+    p1 = np.array([1, 2, 3])
+    p2 = np.array([4, 6, 9])
+    p3 = np.array([12, 11, 9])
+    # These two vectors are in the plane
+    v1 = points[2] - points[0]
+    v2 = points[1] - points[0]
+    # the cross product is a vector normal to the plane
+    cp = np.cross(v1, v2)
+    a, b, c = cp
+    # This evaluates a * x3 + b * y3 + c * z3 which equals d
+    d = -np.dot(cp, p3)
+    return a,b,c,d
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()

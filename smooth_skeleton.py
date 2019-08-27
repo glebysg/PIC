@@ -3,8 +3,8 @@ from statsmodels.tsa.api import ExponentialSmoothing, SimpleExpSmoothing, Holt
 
 alpha = 0.6
 
-skel_reader = open('./data/data1_skel.txt', 'r')
-write_path = './data/smooth_data_06.txt'
+skel_reader = open('./data/assebly_skel.txt', 'r')
+write_path = './data/smooth_assembly_skel.txt'
 full_data = []
 for line in skel_reader:
     data_point = np.array(line.split(), dtype=float)
@@ -21,4 +21,3 @@ for c in range(cols):
 
 smooth_data = (np.transpose(np.array(smooth_data))).reshape(rows,cols)
 np.savetxt(write_path, smooth_data, delimiter=' ')
-

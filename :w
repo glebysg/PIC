@@ -65,16 +65,13 @@ arm_l.solve([60, -70.0, 15.0],init_constraints)
 length = 30*scale
 height = 3*scale
 width = 15*scale
-pad_points = []
 pad = box(pos=pad_offset, length=length, height=height,
         width=width, texture=pad_path)
-# Get pad plane
-# the first point is the 0,0,0 of the pad system
-pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
-pad_points.append((pad.pos+vec(-length, height, width)/2).value)
-pad_points.append((pad.pos+vec(length, height, width)/2).value)
-pad_points = np.array(pad_points)
-p_x, p_y, p_z, p_d = get_plane(pad_points)
+pad_vec1 = pad.pos+vec(-length, height, -width)/2
+pad_vec1 = pad.pos+vec(length, height, -width)/2
+print(pad.axis)
+print(pad.pos)
+# pad_plane =
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
