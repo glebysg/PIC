@@ -4,5 +4,6 @@
     "constraints":[8,3,7,6],
     "offset":[22.1, 1.1, 205],
     "scale": 2.10,
-    "pad_offset":[25, -60, 67]
+    "pad_offset":[25, -60, 67],
+    "arm": ["both", "both", "both"]
 }

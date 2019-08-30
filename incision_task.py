@@ -14,9 +14,9 @@ current_dir = os.getcwd()
 # IMPORTANT: the distance units are in
 # centimeters for rendering purposes
 soften = 3
-robot = "Baxter"
-data_version = '2'
-task = 'Assembly'
+robot = "baxter"
+data_version = '1'
+task = 'incision'
 pose_imitation = False
 skel_path = './data/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/'+task+'_skelts.txt'
@@ -38,6 +38,7 @@ init_constraints = robot_config["constraints"]
 offset = vec(*robot_config["offset"])
 pad_offset = vec(*robot_config["pad_offset"])
 scale = robot_config["scale"]
+task_arm = robot_config["arm"]
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -87,8 +88,10 @@ skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
 
-for init_point, end_point in task_datapoints:
+for current_point, current_arm in zip(task_datapoints, task_arm):
     # Read lines until you get to the line that you want
+    init_point = current_point[0]
+    end_point = current_point[1]
     mse_list = []
     angles = []
     distances = []
@@ -169,7 +172,10 @@ for init_point, end_point in task_datapoints:
         distances.append((dist_h_l-dist_r_l)**2)
         distances.append((dist_h_r-dist_r_r)**2)
         ####################################################
-        #           
+        # Get area under incision
+        elbow_index = human_joint_index[1]
+        # for j_index in range(elbow_index, len(arm_r.points)):
+
     mse_list = np.array(mse_list)
     angles= np.array(angles)
     # if the angle is less than 5 degrees

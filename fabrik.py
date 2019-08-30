@@ -35,8 +35,9 @@ class ikChain:
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
-        # Create an empty list for the constraints
+        # Create an empty list for the constraints and for the joint points
         self.pose_constraints = []
+        self.points = []
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
             self.base_lenght = 6
