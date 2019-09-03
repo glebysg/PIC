@@ -77,9 +77,6 @@ pad_points.append((pad.pos+vec(-length, height, width)/2).value)
 pad_points.append((pad.pos+vec(length, height, width)/2).value)
 pad_points = np.array(pad_points)
 pad_normal = get_plane_normal(pad_points)
-
-print("Pad Points")
-print(pad_points)
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -128,11 +125,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         del human_l_chain[:]
         del human_r_chain[:]
         # draw a new element
-        human_l_chain = draw_debug(human_l*scale, color.yellow,opacity=0.5)
-        human_r_chain = draw_debug(human_r*scale, color.yellow,opacity=0.5)
-        for elem_l, elem_r in zip(human_l_chain,human_r_chain):
-            elem_l.pos = (elem_l.pos + offset*scale)
-            elem_r.pos = (elem_r.pos + offset*scale)
+        human_l_chain = draw_debug(offset_human_l, color.yellow,opacity=0.5)
+        human_r_chain = draw_debug(offset_human_r, color.yellow,opacity=0.5)
         # Get the pose of the new element
         l_constraints =[]
         r_constraints =[]
@@ -148,9 +142,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             l_constraints.append(in_l_const +1)
             r_constraints.append(out_r_const +1)
             r_constraints.append(in_r_const +1)
-        arm_l.solve(human_l[-1]*scale + np.array(offset.value)*scale, l_constraints)
-        arm_r.solve(human_r[-1]*scale + np.array(offset.value)*scale, r_constraints)
-        print(human_r[-1]*scale + np.array(offset.value)*scale)
+        arm_l.solve(offset_human_l[-1], l_constraints)
+        arm_r.solve(offset_human_r[-1], r_constraints)
         # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
@@ -161,11 +154,11 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         # Get the Pose
         ## Human
         ### Get the shoulder link pointing towards the shoulder
-        shoulder_h_l = vec(*(human_l[0]-human_l[1]))
-        shoulder_h_r = vec(*(human_r[0]-human_r[1]))
+        shoulder_h_l = vec(*(offset_human_l[0]-offset_human_l[1]))
+        shoulder_h_r = vec(*(offset_human_r[0]-offset_human_r[1]))
         ### Get the elbow link pointing towards the wrist
-        elbow_h_l = vec(*(human_l[2]-human_l[1]))
-        elbow_h_r = vec(*(human_r[2]-human_r[1]))
+        elbow_h_l = vec(*(offset_human_l[2]-offset_human_l[1]))
+        elbow_h_r = vec(*(offset_human_r[2]-offset_human_r[1]))
         ### Get the angle
         angle_h_l = diff_angle(shoulder_h_l,elbow_h_l)
         angle_h_r = diff_angle(shoulder_h_r,elbow_h_r)
