@@ -185,7 +185,7 @@ def project_to_plane(normal,plane_point,point):
 
 def get_line(p,q):
     if (q[0] - p[0]) == 0:
-        m = None
+        return None, q[0]
     else:
         m = (q[1] - p[1])/(q[0] - p[0])
     b = p[1]-m*p[0]

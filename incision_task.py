@@ -18,7 +18,7 @@ soften = 3
 robot = "baxter"
 data_version = '2'
 task = 'incision'
-pose_imitation = False
+pose_imitation = True
 skel_path = './data/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/'+task+'_skelts.txt'
 task_path = './simulation/data_points/'+task+'_'+data_version+'.txt'
@@ -64,9 +64,9 @@ arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ################### incision pad  ######################
-length = 30*scale
+length = 40*scale
 height = 3*scale
-width = 15*scale
+width = 25*scale
 pad_points = []
 pad = box(pos=pad_offset, length=length, height=height,
         width=width, texture=pad_path)
@@ -77,6 +77,7 @@ pad_points.append((pad.pos+vec(-length, height, width)/2).value)
 pad_points.append((pad.pos+vec(length, height, width)/2).value)
 pad_points = np.array(pad_points)
 pad_normal = get_plane_normal(pad_points)
+print(pad_points[0])
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -96,12 +97,14 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     mse_list = []
     angles = []
     distances = []
+    h_occlussions = []
+    r_occlussions = []
     while line_counter < end_point:
         data_point = np.array(skel_reader.readline().split(), dtype=float)
         line_counter += 1
         if line_counter < init_point:
             continue
-        sleep(0.02)
+        # sleep(0.02)
         human_l = []
         human_r = []
         for l_index, r_index in zip(left_h_joints, right_h_joints):
@@ -174,27 +177,45 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         distances.append((dist_h_l-dist_r_l)**2)
         distances.append((dist_h_r-dist_r_r)**2)
         ####################################################
-        # Get area under incision
-        # get the human projection
+        ############ get the human occluded area ########################
         pad_origin = pad_points[0]
-        h_elbow = project_to_plane(pad_normal,pad_origin,human_r[1])
-        h_wrist = project_to_plane(pad_normal,pad_origin,human_r[2])
+        h_elbow = project_to_plane(pad_normal,pad_origin,offset_human_r[1])
+        h_wrist = project_to_plane(pad_normal,pad_origin,offset_human_r[2])
         h_elbow = h_elbow - pad_origin
         h_wrist = h_wrist - pad_origin
         ####### only calculate if the wrist was under the pad
-        if h_wrist[0] > pad_origin[0] and h_wrist[0] < pad_origin[0] +length and\
-                h_wrist[2] > pad_origin[2] and h_wrist[2] <pad_origin[2]+width:
+        if h_wrist[0] > 0 and h_wrist[0] < length and\
+                h_wrist[2] > 0 and h_wrist[2] < width:
+            ############ get the human occluded area calculation ###########
             h_m, h_b= get_line([h_elbow[0],h_elbow[2]],[h_wrist[0],h_wrist[2]])
             h_line = lambda x: h_m*x + h_b
-            occluded_area = integrate.quad(h_line, 0,h_wrist[0])
-            print(occluded_area)
-
-            # get the projected equations of each line
-
-
+            low_limit = max(0, h_elbow[0])
+            high_limit = min(length, h_wrist[0])
+            h_occluded_area, acc = integrate.quad(h_line, low_limit,high_limit)
+            ############ get the robot occluded area ########################
+            # Get the offset between the human and the robot at the wrist
+            h_r_offset = np.array(arm_r.points[-1]) - np.array(offset_human_r[-1])
+            pad_origin = pad_points[0] + h_r_offset
+            # get the area under the curve for each joint
             elbow_index = human_joint_index[1]
-            # for j_index in range(elbow_index, len(arm_r.points)):
-
+            r_occludded_area = 0
+            for joint_i in range(elbow_index, len(arm_r.points)-1):
+                joint_1 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i])
+                joint_2 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i+1])
+                joint_1 = joint_1 - pad_origin
+                joint_2 = joint_2 - pad_origin
+                ############ robot occluded area calculation ########################
+                r_m, r_b= get_line([joint_1[0],joint_1[2]],[joint_2[0],joint_2[2]])
+                if r_m is None:
+                    continue
+                h_line = lambda x: r_m*x + r_b
+                low_limit = max(0, joint_1[0])
+                high_limit = min(length, joint_2[0])
+                occ, acc = integrate.quad(h_line, low_limit,high_limit)
+                r_occludded_area += occ
+            ############ Append the occluded areas ######################
+            h_occlussions.append(h_occluded_area/(width*height))
+            r_occlussions.append(r_occludded_area/(width*height))
     mse_list = np.array(mse_list)
     angles= np.array(angles)
     # if the angle is less than 5 degrees
@@ -202,6 +223,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     pose_percentage = sum(angles_mask)/float(len(angles_mask))
     print(robot, task, "soften:", soften, "PI:", pose_imitation)
     print("POSE PERCENTAGE %.2f" % pose_percentage)
+    print("HUMAN OCCLUDED AREA %.3f" % np.mean(h_occlussions))
+    print("ROBOT OCCLUDED AREA %.3f" % np.mean(r_occlussions))
 
     # angles= np.mean(angles/max(angles))
     # distances= np.array(distances)
