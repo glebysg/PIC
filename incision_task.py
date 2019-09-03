@@ -6,6 +6,7 @@ from datetime import timedelta
 import numpy as np
 from PIL import Image
 from time import sleep
+from scipy import integrate
 import json
 import os
 
@@ -15,7 +16,7 @@ current_dir = os.getcwd()
 # centimeters for rendering purposes
 soften = 3
 robot = "baxter"
-data_version = '1'
+data_version = '2'
 task = 'incision'
 pose_imitation = False
 skel_path = './data/smooth_'+task+data_version+'_skel.txt'
@@ -75,7 +76,10 @@ pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
 pad_points.append((pad.pos+vec(-length, height, width)/2).value)
 pad_points.append((pad.pos+vec(length, height, width)/2).value)
 pad_points = np.array(pad_points)
-p_x, p_y, p_z, p_d = get_plane(pad_points)
+pad_normal = get_plane_normal(pad_points)
+
+print("Pad Points")
+print(pad_points)
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -100,7 +104,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         line_counter += 1
         if line_counter < init_point:
             continue
-        # sleep(0.02)
+        sleep(0.02)
         human_l = []
         human_r = []
         for l_index, r_index in zip(left_h_joints, right_h_joints):
@@ -112,6 +116,9 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
                     -data_point[r_index*3+2]])
         human_l = np.array(human_l)*100
         human_r = np.array(human_r)*100
+        # get the human arms offset by scale and offset
+        offset_human_l = [get_offset_point(p, offset.value, scale) for p in human_l]
+        offset_human_r = [get_offset_point(p, offset.value, scale) for p in human_r]
         # clear the previous elements
         for elem_l, elem_r in zip(human_l_chain,human_r_chain):
             elem_l.visible = False
@@ -143,6 +150,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             r_constraints.append(in_r_const +1)
         arm_l.solve(human_l[-1]*scale + np.array(offset.value)*scale, l_constraints)
         arm_r.solve(human_r[-1]*scale + np.array(offset.value)*scale, r_constraints)
+        print(human_r[-1]*scale + np.array(offset.value)*scale)
+        # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
         human_target_r = human_r_chain[-1].pos + human_r_chain[-1].axis
@@ -173,8 +182,25 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         distances.append((dist_h_r-dist_r_r)**2)
         ####################################################
         # Get area under incision
-        elbow_index = human_joint_index[1]
-        # for j_index in range(elbow_index, len(arm_r.points)):
+        # get the human projection
+        pad_origin = pad_points[0]
+        h_elbow = project_to_plane(pad_normal,pad_origin,human_r[1])
+        h_wrist = project_to_plane(pad_normal,pad_origin,human_r[2])
+        h_elbow = h_elbow - pad_origin
+        h_wrist = h_wrist - pad_origin
+        ####### only calculate if the wrist was under the pad
+        if h_wrist[0] > pad_origin[0] and h_wrist[0] < pad_origin[0] +length and\
+                h_wrist[2] > pad_origin[2] and h_wrist[2] <pad_origin[2]+width:
+            h_m, h_b= get_line([h_elbow[0],h_elbow[2]],[h_wrist[0],h_wrist[2]])
+            h_line = lambda x: h_m*x + h_b
+            occluded_area = integrate.quad(h_line, 0,h_wrist[0])
+            print(occluded_area)
+
+            # get the projected equations of each line
+
+
+            elbow_index = human_joint_index[1]
+            # for j_index in range(elbow_index, len(arm_r.points)):
 
     mse_list = np.array(mse_list)
     angles= np.array(angles)

@@ -139,18 +139,6 @@ def draw_debug(points,color,opacity=1):
     return chain
 
 # The main function is used to test the helper functions
-def main():
-    offsets = [[-1,1,-1],[1,1,-1],
-        [1,1,1],[-1,1,1],[-1,-1,-1],
-        [1,-1,-1],[1,-1,1],[-1,-1,1]]
-    center = vector(0,0,0)
-    targets = [vector(-2,3,3),
-            vector(-2,3,0),
-            vector(-1,3,-1)]
-    c_index = 3
-    print("The answers for intersection  should be True, True, False")
-    for target in targets:
-        print(is_constraint_intersection(center, offsets, c_index, target))
 
 def get_robot_angle(chain, joint_index):
     shoulder_joint = chain.points[joint_index[0]]
@@ -167,7 +155,7 @@ def get_robot_angle(chain, joint_index):
 # receives a nxm array of points,
 # where n = m = 3 and n is the number
 # of points and m is the number of dimentions (3)
-def get_plane(points):
+def get_plane_normal(points):
     p1 = np.array([1, 2, 3])
     p2 = np.array([4, 6, 9])
     p3 = np.array([12, 11, 9])
@@ -176,15 +164,45 @@ def get_plane(points):
     v2 = points[1] - points[0]
     # the cross product is a vector normal to the plane
     cp = np.cross(v1, v2)
-    a, b, c = cp
-    # This evaluates a * x3 + b * y3 + c * z3 which equals d
-    d = -np.dot(cp, p3)
-    return a,b,c,d
+    return cp
+
+def project_to_plane(normal,plane_point,point):
+    x = point[0]
+    y = point[1]
+    z = point[2]
+    a = normal[0]
+    b = normal[1]
+    c = normal[2]
+    d = plane_point[0]
+    e = plane_point[1]
+    f = plane_point[2]
+    t = (a*d - a*x + b*e - b*y + c*f -c*z)/\
+        (a**2 + b**2 + c**2)
+    x_proy = x + t*a
+    y_proy = y + t*b
+    z_proy = z + t*c
+    return np.array([x_proy,y_proy,z_proy])
+
+def get_line(p,q):
+    if (q[0] - p[0]) == 0:
+        m = None
+    else:
+        m = (q[1] - p[1])/(q[0] - p[0])
+    b = p[1]-m*p[0]
+    return m,b
+# get a point offset by <offset and scaled>
+# by <scale>
+def get_offset_point(point, offset, scale):
+    return np.array(point)*scale + np.array(offset)*scale
+
+def main():
+    print(get_line([2,4],[-1,1]))
+    print(get_line([2,4],[0,2]))
+    print("the answer should be %d, %d" % (1,2))
 
 if __name__ == "__main__":
     # execute only if run as a script
     main()
-
 
 
 
