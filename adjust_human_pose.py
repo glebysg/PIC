@@ -9,12 +9,12 @@ import json
 ########## PARAMS ##############
 soften = 3
 robot = "baxter"
-data_version = '2'
-task = 'incision'
+data_version = '3'
+task = 'incision_straight'
 pose_imitation = True
-skel_path = './data/smooth_'+task+'_skel.txt'
-ts_path = './data/'+task+'_skelts.txt'
-skel_description = './data/'
+skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
+ts_path = './data/new/'+task+data_version+'_skelts.txt'
+skel_description = './data/new/'
 arm_path = './simulation/arms/'+robot+'.txt'
 robot_config_path = './simulation/arms/'+robot+'_config_'\
                     +task+data_version+'.json'
@@ -70,8 +70,11 @@ arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ############# assebly pieces ###########################
 pad_path  = "./simulation/textures/pad.jpg"
-pad = box(pos=pad_offset, length=30*scale, height=3*scale,
-        width=15*scale, texture=pad_path)
+length = 25
+height = 2.3
+width = 25
+pad = box(pos=pad_offset, length=length, height=height,
+        width=width, texture=pad_path)
 ########################################################
 
 # Adjust translation and scaling of the human arms.
@@ -152,8 +155,14 @@ def keyInput(keypress):
                 human_r = np.array(human_r)
             elif s == 'b':
                 scale += 0.1
+                pad.width = width*scale
+                pad.height = height*scale
+                pad.length = length*scale
             elif s == 's':
                 scale -= 0.1
+                pad.width = width*scale
+                pad.height = height*scale
+                pad.length = length*scale
             # clear the previous elements
             for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                 elem_l.visible = False
