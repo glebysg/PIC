@@ -9,8 +9,8 @@ import json
 ########## PARAMS ##############
 soften = 3
 robot = "baxter"
-data_version = '3'
-task = 'incision_straight'
+data_version = ''
+task = 'incision_curvy'
 pose_imitation = True
 skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
@@ -18,8 +18,8 @@ skel_description = './data/new/'
 arm_path = './simulation/arms/'+robot+'.txt'
 robot_config_path = './simulation/arms/'+robot+'_config_'\
                     +task+data_version+'.json'
-# ignore_secs = 25
-ignore_secs = 0
+ignore_secs = 6 
+# ignore_secs = 0
 ###############################
 # read robot config
 config_reader = open(robot_config_path)
@@ -70,9 +70,9 @@ arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ############# assebly pieces ###########################
 pad_path  = "./simulation/textures/pad.jpg"
-length = 25
-height = 2.3
-width = 25
+length = 25*scale
+height = 2.3*scale
+width = 25*scale
 pad = box(pos=pad_offset, length=length, height=height,
         width=width, texture=pad_path)
 ########################################################
@@ -88,7 +88,7 @@ human_l_chain = []
 human_r_chain = []
 skel_reader = open(skel_path, 'r')
 robot = True
-data_count = 0
+data_count = line_counter
 
 for i in range(line_counter):
     skel_reader.readline()
@@ -121,7 +121,7 @@ def keyInput(keypress):
         elif direction is not None \
             and (s == 'l' or s == 'i'):
             if robot:
-                offset += direction*scale
+                offset += direction
                 for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                     elem_l.pos = elem_l.pos + direction*scale
                     elem_r.pos = elem_r.pos + direction*scale

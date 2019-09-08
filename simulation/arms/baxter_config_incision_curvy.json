@@ -2,8 +2,8 @@
     "base":[55.6,0,0],
     "human_joint":[0,2,4],
     "constraints":[8,3,7,6],
-    "offset":[17.1, 0, 198.7],
+    "offset":[-2.9, 11.6, 194.2],
     "scale": 2.1,
-    "pad_offset":[25, -67.2, 73.3],
-    "arm": ["left", "left"]
+    "pad_offset":[-6.5, -69.3, 56.5],
+    "arm": ["left","left","left","left","left","left","left","left","left","left"]
 }
