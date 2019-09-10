@@ -15,10 +15,10 @@ current_dir = os.getcwd()
 # IMPORTANT: the distance units are in
 # centimeters for rendering purposes
 soften = 3
-robot = "baxter"
+robot = "Yumi"
 data_version = '2'
 task = 'incision'
-pose_imitation = True
+pose_imitation = False
 skel_path = './data/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/'+task+'_skelts.txt'
 task_path = './simulation/data_points/'+task+'_'+data_version+'.txt'
@@ -37,9 +37,11 @@ base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
 offset = vec(*robot_config["offset"])
-pad_offset = vec(*robot_config["pad_offset"])
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
+pad_offsets = []
+pad_offsets.append(vec(*robot_config["pad_offset"]["trial1"]))
+pad_offsets.append(vec(*robot_config["pad_offset"]["trial2"]))
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -68,16 +70,8 @@ length = 40*scale
 height = 3*scale
 width = 25*scale
 pad_points = []
-pad = box(pos=pad_offset, length=length, height=height,
+pad = box(pos=vec(0,0,0), length=length, height=height,
         width=width, texture=pad_path)
-# Get pad plane
-# the first point is the 0,0,0 of the pad system
-pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
-pad_points.append((pad.pos+vec(-length, height, width)/2).value)
-pad_points.append((pad.pos+vec(length, height, width)/2).value)
-pad_points = np.array(pad_points)
-pad_normal = get_plane_normal(pad_points)
-print(pad_points[0])
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -90,7 +84,18 @@ skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
 
-for current_point, current_arm in zip(task_datapoints, task_arm):
+for current_point, current_arm, pad_offset in zip(task_datapoints, task_arm, pad_offsets):
+    # Get pad plane
+    # the first point is the 0,0,0 of the pad system
+    print(pad_offset)
+    pad_points = []
+    pad.pos = pad_offset
+    pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
+    pad_points.append((pad.pos+vec(-length, height, width)/2).value)
+    pad_points.append((pad.pos+vec(length, height, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+    print(pad_points[0])
     # Read lines until you get to the line that you want
     init_point = current_point[0]
     end_point = current_point[1]
@@ -104,7 +109,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         line_counter += 1
         if line_counter < init_point:
             continue
-        # sleep(0.02)
+        sleep(0.02)
         human_l = []
         human_r = []
         for l_index, r_index in zip(left_h_joints, right_h_joints):
