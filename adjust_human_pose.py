@@ -18,7 +18,7 @@ skel_description = './data/new/'
 arm_path = './simulation/arms/'+robot+'.txt'
 robot_config_path = './simulation/arms/'+robot+'_config_'\
                     +task+data_version+'.json'
-ignore_secs = 90 
+ignore_secs = 90
 # ignore_secs = 0
 ###############################
 # read robot config
@@ -182,9 +182,6 @@ def keyInput(keypress):
             print("Pad Offset:", pad_offset)
             print("Scale:", scale)
             print("Datapoint:", data_count)
-
-
-
 scene.bind('keydown', keyInput)
 
 

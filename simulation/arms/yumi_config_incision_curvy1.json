@@ -5,5 +5,5 @@
     "offset":[16, 0, 208],
     "scale": 1.60,
     "pad_offset":[20, -50, 57],
-    "arm": ["left", "left"]
+    "arm": ["left","left","left","left","left","left","left","left","left","left"]
 }
