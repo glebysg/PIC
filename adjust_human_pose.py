@@ -5,12 +5,15 @@ from copy import deepcopy
 from datetime import timedelta
 import numpy as np
 import json
+import os
 
 ########## PARAMS ##############
 soften = 3
 robot = "baxter"
-data_version = ''
-task = 'incision_curvy'
+data_version = '3'
+                annot_offset = 1 if 'f' else -1
+                annot_count = annot_count + annot_offset
+task = 'incision_straight'
 pose_imitation = True
 skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
@@ -18,7 +21,9 @@ skel_description = './data/new/'
 arm_path = './simulation/arms/'+robot+'.txt'
 robot_config_path = './simulation/arms/'+robot+'_config_'\
                     +task+data_version+'.json'
-ignore_secs = 90 
+task_path = './simulation/data_points/'+task+'_'+data_version+'.txt'
+task_datapoints = np.loadtxt(task_path, delimiter=' ', dtype=int) if os.path.exists(task_path) else None
+ignore_secs = 90
 # ignore_secs = 0
 ###############################
 # read robot config
@@ -30,7 +35,6 @@ init_constraints = robot_config["constraints"]
 offset = vec(*robot_config["offset"])
 pad_offset = vec(*robot_config["pad_offset"])
 scale = robot_config["scale"]
-
 
 ########## Simplified robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -67,7 +71,6 @@ arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
-
 ############# assebly pieces ###########################
 pad_path  = "./simulation/textures/pad.jpg"
 length = 25*scale
@@ -89,6 +92,7 @@ human_r_chain = []
 skel_reader = open(skel_path, 'r')
 robot = True
 data_count = line_counter
+annot_count = 0
 
 for i in range(line_counter):
     skel_reader.readline()
@@ -107,10 +111,22 @@ def keyInput(keypress):
     global scale
     global robot
     global data_count
-    rate(30)
+    global task_datapoints
+    global annot_count
+    rate(100)
     s = keypress.key # get keyboard info
     if len(s) == 1:
-        if s == 'r':
+        # Go forward a datapoint or rewind
+        if s == 'f' or 'r':
+            if task_datapoints is None:
+                print("You Need a taskpoint to go forward")
+            else:
+                if annot_count < len(task_datapoints) or annot_count > 0:
+                    annot_offset = 1 if 'f' else -1
+                    annot_count = annot_count + annot_offset
+                data_count = task_datapoints[annot_count,0]
+        # change from robot to pad
+        if s == 'c':
             robot = not robot
         if s == 'x':
                 direction = vec(1,0,0)
