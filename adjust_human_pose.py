@@ -9,9 +9,9 @@ import os
 
 ########## PARAMS ##############
 soften = 3
-robot = "baxter"
-data_version = '3'
-task = 'incision_straight'
+robot = "yumi"
+data_version = '1'
+task = 'incision_curvy'
 pose_imitation = True
 skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
