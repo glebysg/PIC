@@ -35,7 +35,7 @@ parser.add_argument('-t', action="store", dest="task", default='incision_straigh
 parser.add_argument('-v', action="store", dest="data_version",
         default="3", help="version of the task that is executed (a number)")
 parser.add_argument('-r', action="store", dest="robot",
-        default="Baxter", help="Robot to use in the task. The options are Baxter or Yumi")
+        default="baxter", help="Robot to use in the task. The options are Baxter or Yumi")
 parser.add_argument('-d', action="store", dest="data_path", default="./data/new/",
         help="Path location of the skel files")
 parser.add_argument('-c', action="store", dest="config_path", default="./simulation/arms/",

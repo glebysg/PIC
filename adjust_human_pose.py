@@ -11,8 +11,6 @@ import os
 soften = 3
 robot = "baxter"
 data_version = '3'
-                annot_offset = 1 if 'f' else -1
-                annot_count = annot_count + annot_offset
 task = 'incision_straight'
 pose_imitation = True
 skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
@@ -23,8 +21,9 @@ robot_config_path = './simulation/arms/'+robot+'_config_'\
                     +task+data_version+'.json'
 task_path = './simulation/data_points/'+task+'_'+data_version+'.txt'
 task_datapoints = np.loadtxt(task_path, delimiter=' ', dtype=int) if os.path.exists(task_path) else None
-ignore_secs = 90
-# ignore_secs = 0
+print(task_datapoints)
+# ignore_secs = 90
+ignore_secs = 0
 ###############################
 # read robot config
 config_reader = open(robot_config_path)
@@ -117,16 +116,18 @@ def keyInput(keypress):
     s = keypress.key # get keyboard info
     if len(s) == 1:
         # Go forward a datapoint or rewind
-        if s == 'f' or 'r':
+        if s == 'f':
             if task_datapoints is None:
                 print("You Need a taskpoint to go forward")
             else:
-                if annot_count < len(task_datapoints) or annot_count > 0:
-                    annot_offset = 1 if 'f' else -1
-                    annot_count = annot_count + annot_offset
-                data_count = task_datapoints[annot_count,0]
+                if annot_count < len(task_datapoints):
+                    annot_count += 1
+                jump_point = task_datapoints[annot_count,0]
+                while jump_point > data_count:
+                    data_count += 1
+                    data_point = np.array(skel_reader.readline().split(), dtype=float)
         # change from robot to pad
-        if s == 'c':
+        if s == 'r':
             robot = not robot
         if s == 'x':
                 direction = vec(1,0,0)
