@@ -9,25 +9,69 @@ from time import sleep
 from scipy import integrate
 import json
 import os
+import argparse
+import signal
+import sys
+import threading
 
-current_dir = os.getcwd()
+# signal handler for killing the program
+
 ########## PARAMS ##############
 # IMPORTANT: the distance units are in
 # centimeters for rendering purposes
-soften = 3
-robot = "baxter"
-data_version = '2'
-task = 'incision'
-pose_imitation = True
-skel_path = './data/smooth_'+task+data_version+'_skel.txt'
-ts_path = './data/'+task+'_skelts.txt'
-task_path = './simulation/data_points/'+task+'_'+data_version+'.txt'
+
+# example call:
+# python incision_task.py -s 3 -t incision_curvy -v 1 -r Baxter -o ./data/results/incision_straight.txt
+
+##############################
+###     PARSE ARGS         ###
+##############################
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', action="store", dest="soften", default=3,
+        type=int, help="degree of softening for the imitation algorithm,\
+                the valiues can go from 1 to 3")
+parser.add_argument('-t', action="store", dest="task", default='incision_straight',
+        help="name of the task to execute, example 'incision_straight'")
+parser.add_argument('-v', action="store", dest="data_version",
+        default="3", help="version of the task that is executed (a number)")
+parser.add_argument('-r', action="store", dest="robot",
+        default="Baxter", help="Robot to use in the task. The options are Baxter or Yumi")
+parser.add_argument('-d', action="store", dest="data_path", default="./data/new/",
+        help="Path location of the skel files")
+parser.add_argument('-c', action="store", dest="config_path", default="./simulation/arms/",
+        help="Path location of the config files")
+parser.add_argument('-a', action="store", dest="annotation_path", default="./simulation/data_points/",
+        help="Path location of the annotated datapoint files")
+parser.add_argument('-o', action="store", dest="output_path", default="./data/results/",
+        help="Path location of the output result files")
+parser.add_argument('--pose_imitation',action="store_true", default=False,
+        help="if present, it uses the pose imitation Algorithm")
+parser.add_argument('--append',action="store_true", default=False,
+        help="if present, append to the file instead of rewriting it")
+
+args = parser.parse_args()
+soften = args.soften
+robot = args.robot
+data_version = args.data_version
+task = args.task
+pose_imitation = args.pose_imitation
+file_append = args.append
+skel_path = args.data_path+'smooth_'+task+data_version+'_skel.txt'
+ts_path = args.data_path+task+'_skelts.txt'
+task_path = args.annotation_path+task+'_'+data_version+'.txt'
 pad_path  = "./simulation/textures/pad.jpg"
-skel_description = './data/'
-arm_path = './simulation/arms/'+robot+'.txt'
-robot_config_path = './simulation/arms/'+robot+'_config_'\
+arm_path = args.config_path+robot+'.txt'
+robot_config_path = args.config_path+robot+'_config_'\
         +task+data_version+'.json'
+print(task_path)
 task_datapoints = np.loadtxt(task_path, delimiter=' ')
+out_file = args.output_path+task+"_"+robot+"_"
+# get the algorigthm name for the robot file
+algorithm = 'poseimit' if pose_imitation else 'fabrik'
+if pose_imitation:
+    algorithm += str(soften)
+out_file += algorithm+".txt"
+
 ###############################
 
 # read robot config
@@ -37,9 +81,9 @@ base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
 offset = vec(*robot_config["offset"])
-pad_offset = vec(*robot_config["pad_offset"])
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
+pad_offset = vec(*robot_config["pad_offset"])
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -50,7 +94,7 @@ right_h_joints = [8,9,10]
 
 # draw x,y,z
 # initialize new bigger canvas
-# scene = canvas(title='Coaching Gym', width=1200, height=800)
+scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
@@ -64,20 +108,12 @@ arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ################### incision pad  ######################
-length = 40*scale
-height = 3*scale
+length = 25*scale
+height = 2.3*scale
 width = 25*scale
 pad_points = []
-pad = box(pos=pad_offset, length=length, height=height,
+pad = box(pos=vec(0,0,0), length=length, height=height,
         width=width, texture=pad_path)
-# Get pad plane
-# the first point is the 0,0,0 of the pad system
-pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
-pad_points.append((pad.pos+vec(-length, height, width)/2).value)
-pad_points.append((pad.pos+vec(length, height, width)/2).value)
-pad_points = np.array(pad_points)
-pad_normal = get_plane_normal(pad_points)
-print(pad_points[0])
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -90,7 +126,20 @@ skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
 
+task_metics = []
+
 for current_point, current_arm in zip(task_datapoints, task_arm):
+    # Get pad plane
+    # the first point is the 0,0,0 of the pad system
+    print(pad_offset)
+    pad_points = []
+    pad.pos = pad_offset
+    pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
+    pad_points.append((pad.pos+vec(-length, height, width)/2).value)
+    pad_points.append((pad.pos+vec(length, height, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+    print(pad_points[0])
     # Read lines until you get to the line that you want
     init_point = current_point[0]
     end_point = current_point[1]
@@ -153,7 +202,12 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         human_target_r = human_r_chain[-1].pos + human_r_chain[-1].axis
         mse_l = (np.square((arm_l.gripper.pos - human_target_l).value)).mean(axis=None)
         mse_r = (np.square((arm_r.gripper.pos - human_target_r).value)).mean(axis=None)
-        mse_list.append([mse_r,mse_l])
+        if arm == 'left':
+            mse_list.append([mse_l])
+        elif arm == 'right':
+            mse_list.append([mse_r])
+        else:
+            mse_list.append([mse_r,mse_l])
         # Get the Pose
         ## Human
         ### Get the shoulder link pointing towards the shoulder
@@ -189,16 +243,22 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             ############ get the human occluded area calculation ###########
             h_m, h_b= get_line([h_elbow[0],h_elbow[2]],[h_wrist[0],h_wrist[2]])
             h_line = lambda x: h_m*x + h_b
-            low_limit = max(0, h_elbow[0])
-            high_limit = min(length, h_wrist[0])
-            h_occluded_area, acc = integrate.quad(h_line, low_limit,high_limit)
+            x_points = [h_elbow[0],h_wrist[0]]
+            h_occlussion_count = 0
+            for x in range(0,int(length)):
+                for z in range(0, int(width)):
+                    if is_above_line([x,z], h_line) and\
+                        x >= min(x_points) and x <= max(x_points):
+                        h_occlussion_count += 1
+            # print(h_occlussion_count,h_occluded_area)
+            h_occluded_area = h_occlussion_count/float(length*width)
             ############ get the robot occluded area ########################
             # Get the offset between the human and the robot at the wrist
             h_r_offset = np.array(arm_r.points[-1]) - np.array(offset_human_r[-1])
             pad_origin = pad_points[0] + h_r_offset
             # get the area under the curve for each joint
             elbow_index = human_joint_index[1]
-            r_occludded_area = 0
+            r_occlussion_count = 0
             for joint_i in range(elbow_index, len(arm_r.points)-1):
                 joint_1 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i])
                 joint_2 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i+1])
@@ -209,13 +269,15 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
                 if r_m is None:
                     continue
                 h_line = lambda x: r_m*x + r_b
-                low_limit = max(0, joint_1[0])
-                high_limit = min(length, joint_2[0])
-                occ, acc = integrate.quad(h_line, low_limit,high_limit)
-                r_occludded_area += occ
+                for x in range(0,int(length)):
+                    for z in range(0, int(width)):
+                        if is_above_line([x,z], h_line) and\
+                            x >= min(x_points) and x <= max(x_points):
+                            r_occlussion_count += 1
+            r_occluded_area = r_occlussion_count/float(length*width)
             ############ Append the occluded areas ######################
-            h_occlussions.append(h_occluded_area/(width*height))
-            r_occlussions.append(r_occludded_area/(width*height))
+            h_occlussions.append(h_occluded_area)
+            r_occlussions.append(r_occluded_area)
     mse_list = np.array(mse_list)
     angles= np.array(angles)
     # if the angle is less than 5 degrees
@@ -225,22 +287,22 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     print("POSE PERCENTAGE %.2f" % pose_percentage)
     print("HUMAN OCCLUDED AREA %.3f" % np.mean(h_occlussions))
     print("ROBOT OCCLUDED AREA %.3f" % np.mean(r_occlussions))
-
+    print("MEAN SQUARED ERROR:", str(round(np.mean(mse_list),2)))
+    task_metics.append([pose_percentage, np.mean(h_occlussions), np.mean(r_occlussions), np.mean(mse_list)])
     # angles= np.mean(angles/max(angles))
     # distances= np.array(distances)
     # distances= np.mean(distances/max(distances))
-    # print("MEAN SQUARED ERROR:", str(round(np.mean(mse_list),2)))
     # print("POSE ANGLE:", str(round(angles, 2)))
     # print("POSE DISTANCES:", str(round(distances, 2)))
     # print("POSE F1:", str(round(2*(angles*distances)/(angles+distances),2)))
 
-exit()
+task_metics = np.array(task_metics)
+if file_append:
+    old_metrics = np.loadtxt(out_file, delimiter=' ')
+    print(old_metrics)
+    task_metics = np.concatenate((old_metrics, task_metics), axis=0)
+    print(task_metics)
+np.savetxt(out_file, task_metics, delimiter=' ')
 
-    # Get shoulder wrist distance
-    ### For the human arms
-    ### For the robot
-
-# chain.solve([-83.8738,34.6046, -2.1450], init_constraints)
-# chain.animate()
-# while True:
-    # chain.animate()
+scene.delete()
+print("DONE!")

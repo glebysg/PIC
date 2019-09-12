@@ -195,6 +195,11 @@ def get_line(p,q):
 def get_offset_point(point, offset, scale):
     return np.array(point)*scale + np.array(offset)*scale
 
+def is_above_line(point, line):
+    x = point[0]
+    y = point[1]
+    return y > line(x)
+
 def main():
     print(get_line([2,4],[-1,1]))
     print(get_line([2,4],[0,2]))

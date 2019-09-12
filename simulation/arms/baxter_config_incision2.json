@@ -4,6 +4,8 @@
     "constraints":[8,3,7,6],
     "offset":[17.1, 0, 198.7],
     "scale": 2.1,
-    "pad_offset":[25, -67.2, 73.3],
+    "pad_offset":{
+        "trial1":[25, -67.2, 73.3],
+        "trial2":[25, -75, 57]},
     "arm": ["left", "left"]
 }

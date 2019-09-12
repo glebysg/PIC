@@ -4,6 +4,6 @@
     "constraints":[8,3,7,6],
     "offset":[1.1, 10.6, 187.8],
     "scale": 2.1,
-    "pad_offset":[-2.3, -69.3, 56.5],
+    "pad_offset":[-2.3, -73.3, 56.5],
     "arm": ["left","left","left","left","left","left","left","left","left","left"]
 }

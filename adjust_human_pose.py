@@ -198,9 +198,6 @@ def keyInput(keypress):
             print("Pad Offset:", pad_offset)
             print("Scale:", scale)
             print("Datapoint:", data_count)
-
-
-
 scene.bind('keydown', keyInput)
 
 
