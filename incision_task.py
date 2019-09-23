@@ -30,6 +30,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-s', action="store", dest="soften", default=3,
         type=int, help="degree of softening for the imitation algorithm,\
                 the valiues can go from 1 to 3")
+parser.add_argument('-w', action="store", dest="sleep_time", default=0.02,
+        type=float, help="waiting time between datapoint updates ")
 parser.add_argument('-t', action="store", dest="task", default='incision_straight',
         help="name of the task to execute, example 'incision_straight'")
 parser.add_argument('-v', action="store", dest="data_version",
@@ -51,6 +53,7 @@ parser.add_argument('--append',action="store_true", default=False,
 
 args = parser.parse_args()
 soften = args.soften
+sleep_time = args.sleep_time
 robot = args.robot
 data_version = args.data_version
 task = args.task
@@ -94,14 +97,15 @@ right_h_joints = [8,9,10]
 
 # draw x,y,z
 # initialize new bigger canvas
+iterations = 20
 scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=20, soften=soften)
+        iterations=iterations, soften=soften)
 arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=20, soften=soften)
+        iterations=iterations, soften=soften)
 arm_r.init_skeleton(init_constraints=init_constraints)
 arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
@@ -153,7 +157,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         line_counter += 1
         if line_counter < init_point:
             continue
-        # sleep(0.02)
+        sleep(sleep_time)
         human_l = []
         human_r = []
         for l_index, r_index in zip(left_h_joints, right_h_joints):
@@ -202,9 +206,9 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         human_target_r = human_r_chain[-1].pos + human_r_chain[-1].axis
         mse_l = (np.square((arm_l.gripper.pos - human_target_l).value)).mean(axis=None)
         mse_r = (np.square((arm_r.gripper.pos - human_target_r).value)).mean(axis=None)
-        if arm == 'left':
+        if current_arm == 'left':
             mse_list.append([mse_l])
-        elif arm == 'right':
+        elif current_arm == 'right':
             mse_list.append([mse_r])
         else:
             mse_list.append([mse_r,mse_l])
