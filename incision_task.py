@@ -29,7 +29,7 @@ import threading
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', action="store", dest="soften", default=3,
         type=int, help="degree of softening for the imitation algorithm,\
-                the valiues can go from 1 to 3")
+                the valiues can go from 0 to 3")
 parser.add_argument('-w', action="store", dest="sleep_time", default=0.02,
         type=float, help="waiting time between datapoint updates ")
 parser.add_argument('-t', action="store", dest="task", default='incision_straight',
@@ -71,12 +71,15 @@ task_datapoints = np.loadtxt(task_path, delimiter=' ')
 out_file = args.output_path+task+"_"+robot+"_"
 # get the algorigthm name for the robot file
 algorithm = 'poseimit' if pose_imitation else 'fabrik'
+title_algoritm = 'FABRIK'
 if pose_imitation:
+    title_algoritm = 'PIC'
+    if soften > 0:
+        title_algoritm = 'PICs'
     algorithm += str(soften)
 out_file += algorithm+".txt"
 
 ###############################
-
 # read robot config
 config_reader = open(robot_config_path)
 robot_config = json.load(config_reader)
@@ -118,6 +121,19 @@ width = 25*scale
 pad_points = []
 pad = box(pos=vec(0,0,0), length=length, height=height,
         width=width, texture=pad_path)
+
+T1 = text(text='Human \nOccluded Area',
+        align='center', color=color.yellow, pos=vec(-17,20,20), height=scale*2)
+T2 = text(text=title_algoritm+'\n Occluded Area',
+        align='center', color=color.green, pos=vec(20,20,20), height=scale*2)
+T3 = text(text='Pose Accuracy\n in incision',
+        align='center', color=color.white, pos=vec(65,20,20), height=scale*2)
+TOcc = text(text=title_algoritm+' Avg Occlussion: --',
+        align='center', color=color.green, pos=vec(2,60,20), height=scale*3)
+TAcc = text(text='---',
+        align='center', color=color.white, pos=vec(65,30,20), height=scale*5)
+rod_h = cylinder(pos=vec(-17,30,20), axis=vec(0,0,0), radius=5, color=color.yellow)
+rod_r = cylinder(pos=vec(20,30,20), axis=vec(0,0,0), radius=5, color=color.green)
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -282,6 +298,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             ############ Append the occluded areas ######################
             h_occlussions.append(h_occluded_area)
             r_occlussions.append(r_occluded_area)
+            rod_r.axis = vec(0,1,0)*20*r_occluded_area
+            rod_h.axis = vec(0,1,0)*20*h_occluded_area
     mse_list = np.array(mse_list)
     angles= np.array(angles)
     # if the angle is less than 5 degrees
@@ -293,6 +311,13 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     print("ROBOT OCCLUDED AREA %.3f" % np.mean(r_occlussions))
     print("MEAN SQUARED ERROR:", str(round(np.mean(mse_list),2)))
     task_metics.append([pose_percentage, np.mean(h_occlussions), np.mean(r_occlussions), np.mean(mse_list)])
+    TAcc.visible = False
+    TAcc = text(text=str(int(pose_percentage*100)) + "%",
+            align='center', color=color.white, pos=vec(65,30,20), height=scale*5)
+    TOcc.visible = False
+    TOcc = text(text=title_algoritm+" Avg Occlussion: %.2f" % np.mean(r_occlussions),
+            align='center', color=color.green, pos=vec(2,60,20), height=scale*3)
+
     # angles= np.mean(angles/max(angles))
     # distances= np.array(distances)
     # distances= np.mean(distances/max(distances))
