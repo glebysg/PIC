@@ -11,7 +11,7 @@ import os
 soften = 3
 robot = "yumi"
 data_version = '1'
-task = 'incision_curvy'
+task = 'assembly'
 pose_imitation = True
 skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
@@ -33,7 +33,9 @@ human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
 offset = vec(*robot_config["offset"])
 pad_offset = vec(*robot_config["pad_offset"])
+pad_axis = vec(*robot_config["pad_axis"])
 scale = robot_config["scale"]
+pad_dim = robot_config["pad_dim"] if task == "assembly" else None
 
 ########## Simplified robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -70,13 +72,21 @@ arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
-############# assebly pieces ###########################
-pad_path  = "./simulation/textures/pad.jpg"
-length = 25*scale
-height = 2.3*scale
-width = 25*scale
-pad = box(pos=pad_offset, length=length, height=height,
-        width=width, texture=pad_path)
+############# assebly/incision pieces ###########################
+if task == "assembly":
+    length = pad_dim[0]*scale
+    height = pad_dim[1]*scale
+    width = pad_dim[2]*scale
+    pad = box(pos=pad_offset, length=length, height=height, width=width,
+            axis=pad_axis,  opacity=0.5, color=color.white)
+else:
+    pad_path  = "./simulation/textures/pad.jpg"
+    length = 25*scale
+    height = 2.3*scale
+    width = 25*scale
+    pad = box(pos=pad_offset, length=length, height=height,
+            width=width, texture=pad_path)
+
 ########################################################
 
 # Adjust translation and scaling of the human arms.
@@ -172,14 +182,14 @@ def keyInput(keypress):
                 human_r = np.array(human_r)
             elif s == 'b':
                 scale += 0.1
-                pad.width = width*scale
-                pad.height = height*scale
-                pad.length = length*scale
+                pad.width = pad_dim[0]*scale
+                pad.height = pad_dim[1]*scale
+                pad.length = pad_dim[2]*scale
             elif s == 's':
                 scale -= 0.1
-                pad.width = width*scale
-                pad.height = height*scale
-                pad.length = length*scale
+                pad.width = pad_dim[0]*scale
+                pad.height = pad_dim[1]*scale
+                pad.length = pad_dim[2]*scale
             # clear the previous elements
             for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                 elem_l.visible = False
@@ -196,7 +206,8 @@ def keyInput(keypress):
                 elem_r.pos = (elem_r.pos + offset*scale)
         elif s == 'p':
             print("Offset:", offset)
-            print("Pad Offset:", pad_offset)
+            print("Pad Orfset:", pad_offset)
+            print("Pad Position:", pad_offset)
             print("Scale:", scale)
             print("Datapoint:", data_count)
 scene.bind('keydown', keyInput)

@@ -67,6 +67,7 @@ arm_path = args.config_path+robot+'.txt'
 robot_config_path = args.config_path+robot+'_config_'\
         +task+data_version+'.json'
 print(task_path)
+print(robot_config_path)
 task_datapoints = np.loadtxt(task_path, delimiter=' ')
 out_file = args.output_path+task+"_"+robot+"_"
 # get the algorigthm name for the robot file
@@ -83,10 +84,11 @@ robot_config = json.load(config_reader)
 base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
-offset = vec(*robot_config["offset"])
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
+pad_axis = vec(*robot_config["pad_axis"])
+pad_dim = robot_config["pad_dim"] if task == "assembly" else None
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -111,13 +113,20 @@ arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
 arm_l.solve([60, -70.0, 15.0],init_constraints)
 
-################### incision pad  ######################
-length = 25*scale
-height = 2.3*scale
-width = 25*scale
+################### incision/assembly pad  ######################
 pad_points = []
-pad = box(pos=vec(0,0,0), length=length, height=height,
-        width=width, texture=pad_path)
+if task == "assembly":
+    length = pad_dim[0]*scale
+    height = pad_dim[1]*scale
+    width = pad_dim[2]*scale
+    pad = box(pos=pad_offset, length=length, height=height, width=width,
+            axis=pad_axis,  opacity=0.5, color=color.white)
+else:
+    length = 25*scale
+    height = 2.3*scale
+    width = 25*scale
+    pad = box(pos=vec(0,0,0), length=length, height=height,
+            width=width, texture=pad_path)
 ########################################################
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
@@ -170,8 +179,10 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         human_l = np.array(human_l)*100
         human_r = np.array(human_r)*100
         # get the human arms offset by scale and offset
-        offset_human_l = [get_offset_point(p, offset.value, scale) for p in human_l]
-        offset_human_r = [get_offset_point(p, offset.value, scale) for p in human_r]
+        l_base = np.array(arm_l.base)/scale
+        r_base = np.array(arm_r.base)/scale
+        offset_human_l = [get_offset_point(p, np.subtract(l_base,human_l[0]), scale) for p in human_l]
+        offset_human_r = [get_offset_point(p, np.subtract(r_base,human_r[0]), scale) for p in human_r]
         # clear the previous elements
         for elem_l, elem_r in zip(human_l_chain,human_r_chain):
             elem_l.visible = False
