@@ -205,6 +205,35 @@ def main():
     print(get_line([2,4],[0,2]))
     print("the answer should be %d, %d" % (1,2))
 
+# Unidimentional Kalman filter for smoothing,
+# where data is the input and Q is the variance
+def kalman_filter(data, Q):
+    n_iter = len(data)
+    sz = (n_iter,) # size of array
+
+    # allocate space for arrays
+    xhat=np.zeros(sz)      # a posteri estimate of x
+    P=np.zeros(sz)         # a posteri error estimate
+    xhatminus=np.zeros(sz) # a priori estimate of x
+    Pminus=np.zeros(sz)    # a priori error estimate
+    K=np.zeros(sz)         # gain or blending factor
+    R = 0.1**2 # estimate of measurement variance, change to see effect
+    # intial guesses
+    xhat[0] = 0.0
+    P[0] = 1.0
+
+    for k in range(1,n_iter):
+        # time update
+        xhatminus[k] = xhat[k-1]
+        Pminus[k] = P[k-1]+Q
+        # measurement update
+        K[k] = Pminus[k]/( Pminus[k]+R )
+        xhat[k] = xhatminus[k]+K[k]*(data[k]-xhatminus[k])
+        P[k] = (1-K[k])*Pminus[k]
+
+    # return the estimated variable
+    return xhat, Pminus
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()

@@ -5,6 +5,7 @@
     "offset":[-2.9, 11.6, 194.2],
     "scale": 2.1,
     "pad_position":[0,0,0],
+    "pad_axis": [1,0,0],
     "pad_offset":[-6.5, -69.3, 56.5],
     "arm": ["right","right","right","right","right","right","right","right","right","right"]
 }

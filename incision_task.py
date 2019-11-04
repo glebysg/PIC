@@ -46,6 +46,8 @@ parser.add_argument('-a', action="store", dest="annotation_path", default="./sim
         help="Path location of the annotated datapoint files")
 parser.add_argument('-o', action="store", dest="output_path", default="./data/results/",
         help="Path location of the output result files")
+parser.add_argument('-f', action="store", dest="filter", default="exp",
+        help="type of filterered data to use. Options: exp, kalman, double")
 parser.add_argument('--pose_imitation',action="store_true", default=False,
         help="if present, it uses the pose imitation Algorithm")
 parser.add_argument('--append',action="store_true", default=False,
@@ -59,7 +61,10 @@ data_version = args.data_version
 task = args.task
 pose_imitation = args.pose_imitation
 file_append = args.append
-skel_path = args.data_path+'smooth_'+task+data_version+'_skel.txt'
+smoothing = "smooth_"
+if args.filter == 'kalman' or args.filter == 'double':
+    smoothing = args.filter + "_" + smoothing
+skel_path = args.data_path+smoothing+task+data_version+'_skel.txt'
 ts_path = args.data_path+task+'_skelts.txt'
 task_path = args.annotation_path+task+'_'+data_version+'.txt'
 pad_path  = "./simulation/textures/pad.jpg"
