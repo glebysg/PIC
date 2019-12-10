@@ -52,7 +52,11 @@ parser.add_argument('--pose_imitation',action="store_true", default=False,
         help="if present, it uses the pose imitation Algorithm")
 parser.add_argument('--append',action="store_true", default=False,
         help="if present, append to the file instead of rewriting it")
-
+parser.add_argument('--filtering',action="store_true", default=False,
+        help="if present, it smoothens the movements through filtering")
+parser.add_argument('--threshold', action="store", dest="filtering_threshold", default=10,
+        type=int, help="threshold of change in degrees \
+                at whitch the robot movement is fitered")
 args = parser.parse_args()
 soften = args.soften
 sleep_time = args.sleep_time
@@ -60,6 +64,8 @@ robot = args.robot
 data_version = args.data_version
 task = args.task
 pose_imitation = args.pose_imitation
+filtering = args.filtering
+filter_threshold = args.filtering_threshold
 file_append = args.append
 smoothing = "smooth_"
 if args.filter == 'kalman' or args.filter == 'double':
@@ -109,10 +115,12 @@ scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, soften=soften)
+        iterations=iterations, soften=soften,
+        filtering=filtering, filter_threshold=filter_threshold)
 arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, soften=soften)
+        iterations=iterations, soften=soften,
+        filtering=filtering, filter_threshold=filter_threshold)
 arm_r.init_skeleton(init_constraints=init_constraints)
 arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
@@ -315,6 +323,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     # print("POSE ANGLE:", str(round(angles, 2)))
     # print("POSE DISTANCES:", str(round(distances, 2)))
     # print("POSE F1:", str(round(2*(angles*distances)/(angles+distances),2)))
+    print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
+    print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
 
 task_metics = np.array(task_metics)
 if file_append:

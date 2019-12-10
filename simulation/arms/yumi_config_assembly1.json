@@ -1,11 +1,11 @@
 {
     "base":[26,0,0],
-    "human_joint":[0,2,4],
+    "human_joint":[0,3,4],
     "constraints":[8,3,7,6],
     "offset":[-8, 10, 191],
     "scale": 1.5,
     "pad_dim":[70,0.2,50],
     "pad_offset":[18.2, -76.2, 25.5],
     "pad_axis": [1,0,0],
-    "arm": ["right","right","right","right","right","right","right","right","right","right"]
+    "arm": ["both","both","both","both","both","both","both","both","both","both"]
 }

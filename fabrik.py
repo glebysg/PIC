@@ -12,7 +12,8 @@ class ikLink:
 
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
-            pose_imitation=False, human_joint_index=None, soften=0):
+            pose_imitation=False, human_joint_index=None, soften=0,
+            filtering=True, filter_threshold=10):
         # initialize the canvas
         # param constraint checkup
         if pose_imitation and human_joint_index is None:
@@ -38,11 +39,17 @@ class ikChain:
         # Create an empty list for the constraints and for the joint points
         self.pose_constraints = []
         self.points = []
+        # Filtering flag to smooth movement in pose imitation mode
+        self.filtering = filtering
+        # Angle change threshold at witch filtering occurs
+        self.filter_threshold = filter_threshold
         # Base parameters for animating the constraints for the pose imitation
         if pose_imitation:
             self.base_lenght = 6
             self.base_offsets = self.get_base_offsets()
             self.soften = soften
+        self.iter_counter = 0
+        self.filtered_counter = 0
 
     def get_base_offsets(self):
         base_offsets = [[-1,1,-1],[1,1,-1],
@@ -182,7 +189,7 @@ class ikChain:
     def draw_chain(self):
         axis = None
         for index in range(len(self.chain)):
-            # Normalize the orientation o f the ik link
+            # Normalize the orientation of the ik link
             pos = vec(*self.points[index])
             axis = vec(*(normalize(self.chain[index].orientation)\
                     *self.chain[index].length))
@@ -194,6 +201,7 @@ class ikChain:
         self.gripper.size = vec(2,4,4)
         if self.pose_imitation:
             self.update_constraints()
+
 
     def get_points(self):
         points = [self.base]
@@ -297,6 +305,7 @@ class ikChain:
         self.backward_points = backward_points
 
     def solve(self, target, constraints=None):
+        self.iter_counter += 1
         # Initialize constraints
         if self.pose_imitation and constraints is not None:
             self.create_constraints(constraints)
@@ -314,6 +323,8 @@ class ikChain:
         else:
             # initialize the points
             self.points = self.get_points()
+            if self.filtering:
+                prev_points = copy.deepcopy(self.points)
             # get distance between target and goal
             error = distance(self.points[-1],self.target)
             count = 0
@@ -328,6 +339,34 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
+            # if we are in pose imitation mode and we
+            # are filtering the data
+            needs_filter = False
+            if self.pose_imitation and self.filtering:
+                # check if any angle in the chain goes over a threshhold
+                prev_link = self.chain[0]
+                for index in range(len(self.points)-2):
+                    v1 = vec(*self.points[index]) -  vec(*self.points[index + 1])
+                    prev_v1 = vec(*prev_points[index]) -  vec(*prev_points[index + 1])
+                    v2 = vec(*self.points[index + 2]) -  vec(*self.points[index + 1])
+                    prev_v2 = vec(*prev_points[index + 2]) -  vec(*prev_points[index + 1])
+                    angle = degrees(diff_angle(v1,v2))
+                    prev_angle = degrees(diff_angle(prev_v1,prev_v2))
+                    if abs(angle-prev_angle) > self.filter_threshold:
+                        needs_filter = True
+                        break
+            if needs_filter:
+                self.filtered_counter += 1
+                self.points = prev_points
+                error = distance(self.points[-1],self.target)
+                count = 0
+                while error > self.tolerance:
+                    self.backward()
+                    self.forward()
+                    error = distance(self.points[-1],self.target)
+                    if count > self.iterations:
+                            break
+                    count += 1
         self.gripper.pos = vec(*self.points[-1])
         self.draw_chain()
 
