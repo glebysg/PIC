@@ -12,7 +12,8 @@ class ikLink:
 
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
-            pose_imitation=False, human_joint_index=None, soften=0,
+            pose_imitation=False, human_joint_index=None,
+            conic_constraints=None,soften=0,
             filtering=True, filter_threshold=10):
         # initialize the canvas
         # param constraint checkup
@@ -48,6 +49,7 @@ class ikChain:
             self.base_lenght = 6
             self.base_offsets = self.get_base_offsets()
             self.soften = soften
+            self.conic_constraints = conic_constraints
         self.iter_counter = 0
         self.filtered_counter = 0
 
@@ -202,7 +204,6 @@ class ikChain:
         if self.pose_imitation:
             self.update_constraints()
 
-
     def get_points(self):
         points = [self.base]
         previous_point = self.base
@@ -235,23 +236,40 @@ class ikChain:
 
     def py_forward(self):
         backward_points = self.backward_points[::-1]
+        # tuples of joint index where the constraint is, type of comnstraint
+        human_joints = [(constr[0], constr[2]) for constr in self.pose_constraints]
         for i in range(len(self.points)-1):
             # reorient towards the backward chain
             target = backward_points[i+1]
             new_orientation = normalize(target-self.points[i])
             # Orient towards the constraints if we are in pose
             # imitation mode
-            human_joints = [(constr[0], constr[2]) for constr in self.pose_constraints]
             # if the constraint is going out of the cube
             if self.pose_imitation and (i,'out') in human_joints:
                 constr_index = human_joints.index((i,'out'))
-                constr_region = self.pose_constraints[constr_index][1]
                 # check if the link intercepts the constraint region
-                intersects = is_constraint_intersection(
-                        self.points[i],
-                        self.base_offsets,
-                        constr_region,
-                        target)
+                # check the intersection by conic constraint
+                if self.conic_constraints[constr_index] and self.human_points is not None:
+                    constraint = self.conic_constraints[constr_index]
+                    # get the human center and target
+                        # if costraint index < 2
+                            # the human target and center are i and i + 1
+                        # else:
+                            # the human target and center anr i-1 and i :)
+                    intersects = is_conic_intersection(
+                            self.points[i],
+                            target,
+                            h_target,
+                            constraint
+                            )
+                # check the intersection by cuadrant constraint
+                else:
+                    constr_region = self.pose_constraints[constr_index][1]
+                    intersects = is_constraint_intersection(
+                            self.points[i],
+                            self.base_offsets,
+                            constr_region,
+                            target)
                 # if it doesnt, find the the side of the sub-cube that
                 # the link can be projected to.
                 if not intersects:
@@ -270,11 +288,12 @@ class ikChain:
     def py_backward(self):
         target = self.target.copy()
         backward_points = [target]
+        # if the constraint is going out of the cube
+        human_joints = [(constr[0], constr[2]) for constr in self.pose_constraints]
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target)
             # Orient towards the constraints if we are in pose
             # imitation mode
-            human_joints = [(constr[0], constr[2]) for constr in self.pose_constraints]
             # if there are constraints for the target
             # and the constraint is going into the cube
             if self.pose_imitation and (i+1, 'in') in human_joints:
@@ -304,11 +323,12 @@ class ikChain:
             target = backward_point
         self.backward_points = backward_points
 
-    def solve(self, target, constraints=None):
+    def solve(self, target, constraints=None, human_points=None):
         self.iter_counter += 1
         # Initialize constraints
         if self.pose_imitation and constraints is not None:
             self.create_constraints(constraints)
+            self.human_points=human_points
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)

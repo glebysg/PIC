@@ -95,6 +95,7 @@ robot_config = json.load(config_reader)
 base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
+conic_constraints = robot_config["robot_"]
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
@@ -115,12 +116,12 @@ scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, soften=soften,
-        filtering=filtering, filter_threshold=filter_threshold)
+        iterations=iterations, conic_constraint=conic_constraint,
+        soften=soften, filtering=filtering, filter_threshold=filter_threshold)
 arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, soften=soften,
-        filtering=filtering, filter_threshold=filter_threshold)
+        iterations=iterations, conic_constraints=conic_constraints,
+        soften=soften, filtering=filtering, filter_threshold=filter_threshold)
 arm_r.init_skeleton(init_constraints=init_constraints)
 arm_l.init_skeleton(init_constraints=init_constraints)
 arm_r.solve([-10, -70.0, 15.0],init_constraints)
@@ -222,8 +223,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             l_constraints.append(in_l_const +1)
             r_constraints.append(out_r_const +1)
             r_constraints.append(in_r_const +1)
-        arm_l.solve(offset_human_l[-1], l_constraints)
-        arm_r.solve(offset_human_r[-1], r_constraints)
+        arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
+        arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
         # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
