@@ -10,10 +10,10 @@ import os
 ########## PARAMS ##############
 soften = 3
 robot = "yumi"
-data_version = '1'
+data_version = '3'
 task = 'assembly'
 pose_imitation = True
-skel_path = './data/new/smooth_'+task+data_version+'_skel.txt'
+skel_path = './data/new/kalman_smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
 skel_description = './data/new/'
 arm_path = './simulation/arms/'+robot+'.txt'

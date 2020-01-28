@@ -249,7 +249,9 @@ class ikChain:
                 constr_index = human_joints.index((i,'out'))
                 # check if the link intercepts the constraint region
                 # check the intersection by conic constraint
-                if self.conic_constraints[constr_index] and self.human_points is not None:
+                # TODO: second clause missing an equal check
+                if self.conic_constraints is not None and\
+                   self.conic_constraints[constr_index] and self.human_points is not None:
                     constraint = self.conic_constraints[constr_index]
                     # get the human center and target
                         # if costraint index < 2

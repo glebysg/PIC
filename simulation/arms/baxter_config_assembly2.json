@@ -2,8 +2,10 @@
     "base":[55.6,0,0],
     "human_joint":[0,2,4],
     "constraints":[8,3,7,6],
-    "offset":[22.1, 1.1, 205],
-    "scale": 2.10,
-    "pad_offset":[25, -60, 67],
-    "arm": ["both", "both", "both"]
+    "offset":[-2.9, 11.6, 194.2],
+    "scale": 2.1,
+    "pad_dim":[70,0.2,50],
+    "pad_offset":[18.2, -76.2, 25.5],
+    "pad_axis": [1,0,0],
+    "arm": ["both","both","both","both","both","both","both","both","both","both"]
 }
