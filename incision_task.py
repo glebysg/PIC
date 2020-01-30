@@ -100,7 +100,7 @@ scale = robot_config["scale"]
 task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
 pad_axis = vec(*robot_config["pad_axis"])
-pad_dim = robot_config["pad_dim"] if task == "assembly" else None
+pad_dim = robot_config["pad_dim"]
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -117,28 +117,23 @@ draw_reference_frame(-100,0,100,arrow_size=10)
 
 ################### incision/assembly pad  ######################
 pad_points = []
+length = pad_dim[0]*scale
+height = pad_dim[1]*scale
+width = pad_dim[2]*scale
 if task == "assembly":
-    length = pad_dim[0]*scale
-    height = pad_dim[1]*scale
-    width = pad_dim[2]*scale
     # occlussion calculation pad
     pad = box(pos=pad_offset, length=length, height=height, width=width,
             axis=pad_axis,  opacity=0.5, color=color.white)
     # create the two pieces of assembly
     # width=width, texture={'file': pad_path, place:['right']})
 else:
-    length = 25*scale
-    height = 2.3*scale
-    width = 25*scale
     # surgical pad
-    pad = box(pos=vec(0,0,0), length=length, height=height,
+    pad = box(pos=pad_offset, length=length, height=height,
             width=width, texture=pad_path)
 
 print(pad_offset)
 ####### Get pad plane ##########
 # if the occlussion/pad is in the x-z plane
-pad_points = []
-pad.pos = pad_offset
 if np.argmax(pad_axis.value) == 0:
     pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
     pad_points.append((pad.pos+vec(-length, height, width)/2).value)
@@ -290,8 +285,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         h_elbow = h_elbow - pad_origin
         h_wrist = h_wrist - pad_origin
         ####### only calculate if the wrist was under the pad
-        if h_wrist[0] > 0 and h_wrist[0] < length and\
-                h_wrist[2] > 0 and h_wrist[2] < width:
+        if wrist_under_occlusion_area(h_wrist,pad_dim,pad_axis,scale):
             ############ get the human occluded area calculation ###########
             h_m, h_b= get_line([h_elbow[0],h_elbow[2]],[h_wrist[0],h_wrist[2]])
             h_line = lambda x: h_m*x + h_b

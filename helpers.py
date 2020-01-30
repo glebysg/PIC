@@ -261,6 +261,23 @@ def kalman_filter(data, Q):
     # return the estimated variable
     return xhat, Pminus
 
+def wrist_under_occlusion_area(h_wrist,pad_dim,pad_axis,scale):
+    length = pad_dim[0]*scale
+    height = pad_dim[1]*scale
+    width = pad_dim[2]*scale
+    # if the occlussion/pad is in the x-z plane
+    if np.argmax(pad_axis.value) == 0:
+        return  h_wrist[0] > 0 and h_wrist[0] < length and\
+                h_wrist[2] > 0 and h_wrist[2] < width
+    # if the occlussion/pad is in the z-y plane
+    elif np.argmax(pad_axis.value) == np.argmin(pad_dim):
+        return  h_wrist[0] > 0 and h_wrist[0] < length and\
+                h_wrist[2] > 0 and h_wrist[2] < width
+    # if the occlussion/pad is in the x-y plane
+    else:
+        return  h_wrist[0] > 0 and h_wrist[0] < length and\
+                h_wrist[2] > 0 and h_wrist[2] < width
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()
