@@ -125,8 +125,7 @@ if task == "assembly":
     pad = box(pos=pad_offset, length=length, height=height, width=width,
             axis=pad_axis,  opacity=0.5, color=color.white)
     # create the two pieces of assembly
-
-           # width=width, texture={'file': pad_path, place:['right']})
+    # width=width, texture={'file': pad_path, place:['right']})
 else:
     length = 25*scale
     height = 2.3*scale
@@ -134,7 +133,34 @@ else:
     # surgical pad
     pad = box(pos=vec(0,0,0), length=length, height=height,
             width=width, texture=pad_path)
-########################################################
+
+print(pad_offset)
+####### Get pad plane ##########
+# if the occlussion/pad is in the x-z plane
+pad_points = []
+pad.pos = pad_offset
+if np.argmax(pad_axis.value) == 0:
+    pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
+    pad_points.append((pad.pos+vec(-length, height, width)/2).value)
+    pad_points.append((pad.pos+vec(length, height, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+# if the occlussion/pad is in the z-y plane
+elif np.argmax(pad_axis.value) == np.argmin(pad_dim):
+    pad_points.append((pad.pos+vec(height, length, -width)/2).value)
+    pad_points.append((pad.pos+vec(height, length, width)/2).value)
+    pad_points.append((pad.pos+vec(height, -length, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+# if the occlussion/pad is in the x-y plane
+else:
+    pad_points.append((pad.pos+vec(-height, length, width)/2).value)
+    pad_points.append((pad.pos+vec(-height, -length, width)/2).value)
+    pad_points.append((pad.pos+vec(height, -length, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+print(pad_points[0])
+#######################################################
 # initialize robot arms
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
@@ -164,18 +190,6 @@ rate(30)
 task_metics = []
 
 for current_point, current_arm in zip(task_datapoints, task_arm):
-    # Get pad plane
-    # the first point is the 0,0,0 of the pad system
-    print(pad_offset)
-    pad_points = []
-    pad.pos = pad_offset
-    # TODO: create a case based pad points thing depending on the axis
-    pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
-    pad_points.append((pad.pos+vec(-length, height, width)/2).value)
-    pad_points.append((pad.pos+vec(length, height, width)/2).value)
-    pad_points = np.array(pad_points)
-    pad_normal = get_plane_normal(pad_points)
-    print(pad_points[0])
     # Read lines until you get to the line that you want
     init_point = current_point[0]
     end_point = current_point[1]
