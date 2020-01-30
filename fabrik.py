@@ -3,6 +3,7 @@ from vpython import *
 import copy
 from pprint import pprint as pp
 from helpers import *
+import math
 
 
 class ikLink:
@@ -14,7 +15,8 @@ class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
             pose_imitation=False, human_joint_index=None,
             conic_constraints=None,soften=0,
-            filtering=True, filter_threshold=10):
+            filtering=True, filter_threshold=10, render_task=False,
+            render_scale=1):
         # initialize the canvas
         # param constraint checkup
         if pose_imitation and human_joint_index is None:
@@ -33,6 +35,8 @@ class ikChain:
         self.iterations = iterations
         # for animation
         self.drag = True
+        self.render_task = render_task
+        self.render_scale = render_scale
         # self.ik_sphere=None
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
         self.pose_imitation=pose_imitation
@@ -118,6 +122,11 @@ class ikChain:
                 prev_joint = current_joint
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
                 axis=axis, color=color.green)
+        # create task-based elements
+        if self.render_task == "assembly":
+            self.assembly_piece =  box(pos=vec(0,0,0),
+                    size =vec(28,1,10)*self.render_scale,
+                    texture=textures.metal)
         # Update constraint position
         if self.pose_imitation:
             self.update_constraints()
@@ -200,9 +209,17 @@ class ikChain:
             self.graphic_ik[index*2+1].axis = axis
         self.gripper.pos = vec(*self.points[-1])
         self.gripper.axis = axis
-        self.gripper.size = vec(2,4,4)
         if self.pose_imitation:
             self.update_constraints()
+        # Render Task-dependent elements in the chain
+        if self.render_task == "assembly":
+            axis = vec(*normalize(axis.value))
+            self.gripper.size=vec(6,4,4)
+            self.assembly_piece.pos=vec(*self.points[-1])+axis*self.assembly_piece.length/2
+            # self.assembly_piece.pos=vec(*self.points[-1])+axis*math.sqrt(20)
+            self.assembly_piece.axis=axis*self.assembly_piece.length
+        else:
+            self.gripper.size=vec(2,4,4)
 
     def get_points(self):
         points = [self.base]
@@ -247,9 +264,11 @@ class ikChain:
             # if the constraint is going out of the cube
             if self.pose_imitation and (i,'out') in human_joints:
                 constr_index = human_joints.index((i,'out'))
+                constr_region = self.pose_constraints[constr_index][1]
                 # check if the link intercepts the constraint region
                 # check the intersection by conic constraint
                 # TODO: second clause missing an equal check
+                intersects = False
                 if self.conic_constraints is not None and\
                    self.conic_constraints[constr_index] and self.human_points is not None:
                     constraint = self.conic_constraints[constr_index]
@@ -258,15 +277,14 @@ class ikChain:
                             # the human target and center are i and i + 1
                         # else:
                             # the human target and center anr i-1 and i :)
-                    intersects = is_conic_intersection(
-                            self.points[i],
-                            target,
-                            h_target,
-                            constraint
-                            )
+                    # intersects = is_conic_intersection(
+                            # self.points[i],
+                            # target,
+                            # h_target,
+                            # constraint
+                            # )
                 # check the intersection by cuadrant constraint
                 else:
-                    constr_region = self.pose_constraints[constr_index][1]
                     intersects = is_constraint_intersection(
                             self.points[i],
                             self.base_offsets,

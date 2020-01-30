@@ -11,7 +11,7 @@ import os
 soften = 3
 robot = "yumi"
 data_version = '3'
-task = 'assembly'
+task = 'incision_straight'
 pose_imitation = True
 skel_path = './data/new/kalman_smooth_'+task+data_version+'_skel.txt'
 ts_path = './data/new/'+task+data_version+'_skelts.txt'
@@ -85,7 +85,7 @@ else:
     height = 2.3*scale
     width = 25*scale
     pad = box(pos=pad_offset, length=length, height=height,
-            width=width, texture=pad_path)
+            width=width, texture={'file': pad_path, 'place':['up']})
 
 ########################################################
 
@@ -182,14 +182,14 @@ def keyInput(keypress):
                 human_r = np.array(human_r)
             elif s == 'b':
                 scale += 0.1
-                pad.width = pad_dim[0]*scale
+                pad.length = pad_dim[0]*scale
                 pad.height = pad_dim[1]*scale
-                pad.length = pad_dim[2]*scale
+                pad.width = pad_dim[2]*scale
             elif s == 's':
                 scale -= 0.1
-                pad.width = pad_dim[0]*scale
+                pad.legth = pad_dim[0]*scale
                 pad.height = pad_dim[1]*scale
-                pad.length = pad_dim[2]*scale
+                pad.width = pad_dim[2]*scale
             # clear the previous elements
             for elem_l, elem_r in zip(human_l_chain,human_r_chain):
                 elem_l.visible = False

@@ -95,7 +95,7 @@ robot_config = json.load(config_reader)
 base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
-conic_constraints = robot_config["robot_"]
+conic_constraints = robot_config["conic_constraints"] if "conic_constraints" in robot_config else None
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
@@ -114,18 +114,6 @@ right_h_joints = [8,9,10]
 iterations = 20
 scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
-arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
-        human_joint_index=human_joint_index,
-        iterations=iterations, conic_constraint=conic_constraint,
-        soften=soften, filtering=filtering, filter_threshold=filter_threshold)
-arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
-        human_joint_index=human_joint_index,
-        iterations=iterations, conic_constraints=conic_constraints,
-        soften=soften, filtering=filtering, filter_threshold=filter_threshold)
-arm_r.init_skeleton(init_constraints=init_constraints)
-arm_l.init_skeleton(init_constraints=init_constraints)
-arm_r.solve([-10, -70.0, 15.0],init_constraints)
-arm_l.solve([60, -70.0, 15.0],init_constraints)
 
 ################### incision/assembly pad  ######################
 pad_points = []
@@ -133,15 +121,35 @@ if task == "assembly":
     length = pad_dim[0]*scale
     height = pad_dim[1]*scale
     width = pad_dim[2]*scale
+    # occlussion calculation pad
     pad = box(pos=pad_offset, length=length, height=height, width=width,
             axis=pad_axis,  opacity=0.5, color=color.white)
+    # create the two pieces of assembly
+
+           # width=width, texture={'file': pad_path, place:['right']})
 else:
     length = 25*scale
     height = 2.3*scale
     width = 25*scale
+    # surgical pad
     pad = box(pos=vec(0,0,0), length=length, height=height,
             width=width, texture=pad_path)
 ########################################################
+# initialize robot arms
+arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
+        human_joint_index=human_joint_index,
+        iterations=iterations, conic_constraints=conic_constraints,
+        soften=soften, filtering=filtering, filter_threshold=filter_threshold,
+        render_task=task, render_scale=scale)
+arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
+        human_joint_index=human_joint_index,
+        iterations=iterations, conic_constraints=conic_constraints,
+        soften=soften, filtering=filtering, filter_threshold=filter_threshold,
+        render_task=task, render_scale=scale)
+arm_r.init_skeleton(init_constraints=init_constraints)
+arm_l.init_skeleton(init_constraints=init_constraints)
+arm_r.solve([-10, -70.0, 15.0],init_constraints)
+arm_l.solve([60, -70.0, 15.0],init_constraints)
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
 # with open(skel_path, 'r') as skel_file:
@@ -161,6 +169,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     print(pad_offset)
     pad_points = []
     pad.pos = pad_offset
+    # TODO: create a case based pad points thing depending on the axis
     pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
     pad_points.append((pad.pos+vec(-length, height, width)/2).value)
     pad_points.append((pad.pos+vec(length, height, width)/2).value)

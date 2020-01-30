@@ -4,8 +4,8 @@
     "constraints":[8,3,7,6],
     "offset":[-2.9, 11.6, 194.2],
     "scale": 2.1,
-    "pad_dim":[70,0.2,50],
-    "pad_offset":[18.2, -76.2, 25.5],
-    "pad_axis": [1,0,0],
+    "pad_dim":[30,0.2,40],
+    "pad_offset":[-56.2, -13.5, 27.6],
+    "pad_axis": [0,1,0],
     "arm": ["both","both","both","both","both","both","both","both","both","both"]
 }

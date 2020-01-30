@@ -3,9 +3,9 @@
     "human_joint":[0,3,4],
     "constraints":[8,3,7,6],
     "offset":[-8, 10, 191],
-    "scale": 1.5,
-    "pad_dim":[70,0.2,50],
-    "pad_offset":[18.2, -76.2, 25.5],
-    "pad_axis": [1,0,0],
+    "scale": 1.7,
+    "pad_dim":[40,60,0.2],
+    "pad_offset":[9.7, -18.7, 64.5],
+    "pad_axis": [0,1,0],
     "arm": ["both","both","both","both","both","both","both","both","both","both"]
 }
