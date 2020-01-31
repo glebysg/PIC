@@ -279,6 +279,29 @@ def wrist_under_occlusion_area(h_wrist,pad_dim,pad_axis,scale):
         return  h_wrist[0] > 0 and h_wrist[0] < height and\
                 h_wrist[1] > 0 and h_wrist[1] < length
 
+def get_joint_occlussion(joint_1,joint_2,pad_x_index,pad_y_index,pad_proj,pad_orth):
+    occlussion_count = 0
+    r_m, r_b= get_line([joint_1[pad_x_index],joint_1[pad_y_index]],
+            [joint_2[pad_x_index],joint_2[pad_y_index]])
+    h_line = lambda x: r_m*x + r_b
+    x_points = [joint_1[pad_x_index],joint_2[pad_x_index]]
+    for x in range(0,int(pad_proj)):
+        for y in range(0, int(pad_orth)):
+            if is_above_line([x,y], h_line) and\
+                x >= min(x_points) and x <= max(x_points):
+                occlussion_count += 1
+                # Delete
+                # draw_point = np.array([0,0,0], dtype=float)
+                # draw_point[pad_x_index] = x
+                # draw_point[pad_y_index] = y
+                # draw_point += pad_origin
+                # d_points.append(vec(*draw_point))
+    # DELETE
+    # if len(d_points)>0:
+        # points(pos=d_points, radius=1, color=color.red)
+    return occlussion_count
+
+
 if __name__ == "__main__":
     # execute only if run as a script
     main()
