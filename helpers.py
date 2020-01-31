@@ -211,10 +211,11 @@ def project_to_plane(normal,plane_point,point):
     return np.array([x_proy,y_proy,z_proy])
 
 def get_line(p,q):
+    # make the line not completely straight to get some
+    # arm occlussion when the arm is straight
     if (q[0] - p[0]) == 0:
-        return None, q[0]
-    else:
-        m = (q[1] - p[1])/(q[0] - p[0])
+        p[0]+=1
+    m = (q[1] - p[1])/(q[0] - p[0])
     b = p[1]-m*p[0]
     return m,b
 # get a point offset by <offset and scaled>
@@ -275,8 +276,8 @@ def wrist_under_occlusion_area(h_wrist,pad_dim,pad_axis,scale):
                 h_wrist[2] > 0 and h_wrist[2] < width
     # if the occlussion/pad is in the x-y plane
     else:
-        return  h_wrist[0] > 0 and h_wrist[0] < length and\
-                h_wrist[2] > 0 and h_wrist[2] < width
+        return  h_wrist[0] > 0 and h_wrist[0] < height and\
+                h_wrist[1] > 0 and h_wrist[1] < length
 
 if __name__ == "__main__":
     # execute only if run as a script

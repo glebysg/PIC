@@ -140,20 +140,44 @@ if np.argmax(pad_axis.value) == 0:
     pad_points.append((pad.pos+vec(length, height, width)/2).value)
     pad_points = np.array(pad_points)
     pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = length
+    pad_orth = width
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 0
+    pad_y_index = 2
 # if the occlussion/pad is in the z-y plane
 elif np.argmax(pad_axis.value) == np.argmin(pad_dim):
+    pad_points.append((pad.pos+vec(height, -length, -width)/2).value)
     pad_points.append((pad.pos+vec(height, length, -width)/2).value)
     pad_points.append((pad.pos+vec(height, length, width)/2).value)
-    pad_points.append((pad.pos+vec(height, -length, width)/2).value)
     pad_points = np.array(pad_points)
     pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = length
+    pad_orth = width
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 1
+    pad_y_index = 2
 # if the occlussion/pad is in the x-y plane
 else:
-    pad_points.append((pad.pos+vec(-height, length, width)/2).value)
     pad_points.append((pad.pos+vec(-height, -length, width)/2).value)
-    pad_points.append((pad.pos+vec(height, -length, width)/2).value)
+    pad_points.append((pad.pos+vec(-height, length, width)/2).value)
+    pad_points.append((pad.pos+vec(height, length, width)/2).value)
     pad_points = np.array(pad_points)
     pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = height
+    pad_orth = length
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 0
+    pad_y_index = 1
 print(pad_points[0])
 #######################################################
 # initialize robot arms
@@ -181,8 +205,11 @@ human_r_chain = []
 skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
-
 task_metics = []
+
+
+# DELETE
+draw_points = None
 
 for current_point, current_arm in zip(task_datapoints, task_arm):
     # Read lines until you get to the line that you want
@@ -277,7 +304,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         angles.append((angle_h_r-angle_r_r)**2)
         distances.append((dist_h_l-dist_r_l)**2)
         distances.append((dist_h_r-dist_r_r)**2)
-        ####################################################
+        #################################################################
         ############ get the human occluded area ########################
         pad_origin = pad_points[0]
         h_elbow = project_to_plane(pad_normal,pad_origin,offset_human_r[1])
@@ -287,17 +314,18 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         ####### only calculate if the wrist was under the pad
         if wrist_under_occlusion_area(h_wrist,pad_dim,pad_axis,scale):
             ############ get the human occluded area calculation ###########
-            h_m, h_b= get_line([h_elbow[0],h_elbow[2]],[h_wrist[0],h_wrist[2]])
+            h_m, h_b= get_line([h_elbow[pad_x_index],h_elbow[pad_y_index]],
+                    [h_wrist[pad_x_index],h_wrist[pad_y_index]])
             h_line = lambda x: h_m*x + h_b
-            x_points = [h_elbow[0],h_wrist[0]]
+            x_points = [h_elbow[pad_x_index],h_wrist[pad_x_index]]
             h_occlussion_count = 0
-            for x in range(0,int(length)):
-                for z in range(0, int(width)):
-                    if is_above_line([x,z], h_line) and\
+            for x in range(0,int(pad_proj)):
+                for y in range(0, int(pad_orth)):
+                    if is_above_line([x,y], h_line) and\
                         x >= min(x_points) and x <= max(x_points):
                         h_occlussion_count += 1
             # print(h_occlussion_count,h_occluded_area)
-            h_occluded_area = h_occlussion_count/float(length*width)
+            h_occluded_area = h_occlussion_count/float(pad_proj*pad_orth)
             ############ get the robot occluded area ########################
             # Get the offset between the human and the robot at the wrist
             h_r_offset = np.array(arm_r.points[-1]) - np.array(offset_human_r[-1])
@@ -305,22 +333,36 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             # get the area under the curve for each joint
             elbow_index = human_joint_index[1]
             r_occlussion_count = 0
+            # DELETE
+            d_points = []
             for joint_i in range(elbow_index, len(arm_r.points)-1):
                 joint_1 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i])
                 joint_2 = project_to_plane(pad_normal,pad_origin,arm_r.points[joint_i+1])
                 joint_1 = joint_1 - pad_origin
                 joint_2 = joint_2 - pad_origin
                 ############ robot occluded area calculation ########################
-                r_m, r_b= get_line([joint_1[0],joint_1[2]],[joint_2[0],joint_2[2]])
+                r_m, r_b= get_line([joint_1[pad_x_index],joint_1[pad_y_index]],
+                        [joint_2[pad_x_index],joint_2[pad_y_index]])
                 if r_m is None:
                     continue
                 h_line = lambda x: r_m*x + r_b
-                for x in range(0,int(length)):
-                    for z in range(0, int(width)):
-                        if is_above_line([x,z], h_line) and\
+                x_points = [joint_1[pad_x_index],joint_2[pad_x_index]]
+                for x in range(0,int(pad_proj)):
+                    for y in range(0, int(pad_orth)):
+                        if is_above_line([x,y], h_line) and\
                             x >= min(x_points) and x <= max(x_points):
                             r_occlussion_count += 1
-            r_occluded_area = r_occlussion_count/float(length*width)
+                            # Delete
+                            # draw_point = np.array([0,0,0], dtype=float)
+                            # draw_point[pad_x_index] = x
+                            # draw_point[pad_y_index] = y
+                            # draw_point += pad_origin
+                            # d_points.append(vec(*draw_point))
+            # DELETE
+            # if len(d_points)>0:
+                # points(pos=d_points, radius=1, color=color.red)
+            r_occluded_area = r_occlussion_count/float(pad_proj*pad_orth)
+
             ############ Append the occluded areas ######################
             h_occlussions.append(h_occluded_area)
             r_occlussions.append(r_occluded_area)
