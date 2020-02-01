@@ -1,0 +1,56 @@
+Original batch processing
+ ______________________________________________________________
+python incision_task.py -s 0 -t incision_straight -v 3 -r baxter -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t incision_straight -v 3 -r yumi -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 0 -t incision_straight -v 3 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 1 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 1 -t incision_straight -v 3 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 2 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 2 -t incision_straight -v 3 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 3 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 3 -t incision_straight -v 3 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+
+python incision_task.py -s 0 -t incision_curvy -v 1 -r baxter -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t incision_curvy -v 1 -r yumi -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t incision_curvy -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40 
+python incision_task.py -s 0 -t incision_curvy -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 1 -t incision_curvy -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 1 -t incision_curvy -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 2 -t incision_curvy -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold  40 
+python incision_task.py -s 2 -t incision_curvy -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 3 -t incision_curvy -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40 
+python incision_task.py -s 3 -t incision_curvy -v 1 -r yumi -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+
+python incision_task.py -s 0 -t assembly -v 1 -r baxter -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 1 -r yumi -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 0 -t assembly -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 15
+python incision_task.py -s 1 -t assembly -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 1 -t assembly -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 15
+python incision_task.py -s 2 -t assembly -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 2 -t assembly -v 1 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 15
+python incision_task.py -s 3 -t assembly -v 1 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 3 -t assembly -v 1 -r yumi -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 15
+
+python incision_task.py -s 0 -t assembly -v 2 -r baxter -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 2 -r yumi -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 2 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 0 -t assembly -v 2 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 1 -t assembly -v 2 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 1 -t assembly -v 2 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 2 -t assembly -v 2 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 2 -t assembly -v 2 -r yumi -o data/rss_results/ --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 3 -t assembly -v 2 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40
+python incision_task.py -s 3 -t assembly -v 2 -r yumi -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+
+python incision_task.py -s 0 -t assembly -v 3 -r baxter -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 3 -r yumi -o data/rss_results/ -f kalman --filtering
+python incision_task.py -s 0 -t assembly -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 0 -t assembly -v 3 -r yumi -o data/rss_results/ -f kalman --pose_imitation --filtering --threshold 25
+python incision_task.py -s 1 -t assembly -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 1 -t assembly -v 3 -r yumi -o data/rss_results/ -f kalman --pose_imitation --filtering --threshold 25
+python incision_task.py -s 2 -t assembly -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 2 -t assembly -v 3 -r yumi -o data/rss_results/ -f kalman --pose_imitation --filtering --threshold 25
+python incision_task.py -s 3 -t assembly -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+python incision_task.py -s 3 -t assembly -v 3 -r yumi -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25

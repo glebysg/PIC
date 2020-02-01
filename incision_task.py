@@ -214,6 +214,7 @@ rate(30)
 task_metrics = []
 
 for current_point, current_arm in zip(task_datapoints, task_arm):
+    print ("CURRENT ARM", current_arm)
     # Read lines until you get to the line that you want
     init_point = current_point[0]
     end_point = current_point[1]
@@ -320,7 +321,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         h_elbow_l = h_elbow_l- pad_origin
         h_wrist_l = h_wrist_l - pad_origin
         # calculate the left human and robot occlusion area
-        if current_arm == "left" or "both":
+        if current_arm == "left" or current_arm == "both":
             ####### only calculate if the wrist was under the pad
             if wrist_under_occlusion_area(h_wrist_l,pad_dim,pad_axis,scale):
                 ############ get the human occluded area calculation ###########
@@ -347,7 +348,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
                             pad_proj,pad_orth)
                 r_occluded_area = r_occlussion_count/float(pad_proj*pad_orth)
                 r_occlussions.append(r_occluded_area)
-        if current_arm == "right" or "both":
+        if current_arm == "right" or current_arm == "both":
             ####### only calculate if the wrist was under the pad
             if wrist_under_occlusion_area(h_wrist_r,pad_dim,pad_axis,scale):
                 ############ get the human occluded area calculation ###########

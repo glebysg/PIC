@@ -3,10 +3,11 @@ from os import path
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 
-tasks = ['incision_curvy', 'incision_straight']
+incision_tasks = ['incision_curvy1', 'incision_straight3']
+assembly_tasks = ['assembly1','assebly2','assembly3']
 robots = ["yumi","baxter"]
 algorithms = ['fabrik','poseimit0', 'poseimit1', 'poseimit2', 'poseimit3']
-out_path = 'data/results/'
+out_path = 'data/rss_results/'
 pose_file = "pose.txt"
 occlussion_file = "occlussion.txt"
 distance_file = "distances.txt"
@@ -16,16 +17,18 @@ distance_writer = open(out_path+distance_file, "w+")
 show_std = True
 dec = "{:.2f}"
 
-pose_means = []
-pose_stds = []
-dist_means = []
-dist_stds = []
-occ_means = []
-occ_stds = []
+################# CALCULATE THE INCISION ########################
+
+inc_pose_means = []
+inc_pose_stds = []
+inc_dist_means = []
+inc_dist_stds = []
+inc_occ_means = []
+inc_occ_stds = []
 
 for algorithm in algorithms:
     full_result = None
-    for task in tasks:
+    for task in incision_tasks:
         for robot in robots:
                 name = out_path+task+"_"+ robot + "_" + algorithm + ".txt"
                 if path.exists(name):
@@ -41,34 +44,85 @@ for algorithm in algorithms:
     # Calculate the average and standard deviation
     means = np.mean(full_result,axis=0)
     stds = np.std(full_result,axis=0)
-    pose_means.append(means[0])
-    pose_stds.append(stds[0])
-    dist_means.append(means[3])
-    dist_stds.append(stds[3])
-    occ_means.append(means[2])
-    occ_stds.append(stds[2])
+    inc_pose_means.append(means[0])
+    inc_pose_stds.append(stds[0])
+    inc_dist_means.append(means[3])
+    inc_dist_stds.append(stds[3])
+    inc_occ_means.append(means[2])
+    inc_occ_stds.append(stds[2])
 
-print(occ_means)
-print(occ_stds)
+print(inc_occ_means)
+print(inc_occ_stds)
+
+################# CALCULATE THE ASSEMBLY ########################
+asb_pose_means = []
+asb_pose_stds = []
+asb_dist_means = []
+asb_dist_stds = []
+asb_occ_means = []
+asb_occ_stds = []
+
+for algorithm in algorithms:
+    full_result = None
+    for task in assembly_tasks:
+        for robot in robots:
+                name = out_path+task+"_"+ robot + "_" + algorithm + ".txt"
+                if path.exists(name):
+                    print("Processing:", name)
+                    if full_result is None:
+                        full_result = np.loadtxt(name, delimiter=' ')
+                        full_result[:,2] = full_result[:,2]
+                    else:
+                        result = np.loadtxt(name, delimiter=' ')
+                        result[:,2] = result[:,2]
+                        full_result = np.concatenate((result,full_result),axis=0)
+    # PLOT THE RESULT
+    # Calculate the average and standard deviation
+    means = np.mean(full_result,axis=0)
+    stds = np.std(full_result,axis=0)
+    asb_pose_means.append(means[0])
+    asb_pose_stds.append(stds[0])
+    asb_dist_means.append(means[3])
+    asb_dist_stds.append(stds[3])
+    asb_occ_means.append(means[2])
+    asb_occ_stds.append(stds[2])
+
+print(asb_occ_means)
+print(asb_occ_stds)
+
 # Create lists for the plot
 x_pos = np.arange(len(algorithms))
-CTEs = occ_means
-error = occ_stds
+width = 0.25
+inc_CTEs = inc_occ_means
+inc_error = inc_occ_stds
+asb_CTEs = asb_occ_means
+asb_error = asb_occ_stds
 
-
+#################### OCCLUSSION #########################
 # Build the plot
 fig, ax = plt.subplots()
-barplot = ax.bar(x_pos, CTEs, yerr=error, align='center', alpha=0.65, ecolor='black', edgecolor='black', linewidth=2, capsize=10)
-barplot[0].set_color('yellow')
-barplot[1].set_color('coral')
-barplot[2].set_color('crimson')
-barplot[3].set_color('darkmagenta')
-barplot[4].set_color('darkblue')
+barplot_1 = ax.bar(x_pos, inc_CTEs, width,  yerr=inc_error, alpha=0.65, ecolor='black', edgecolor='black', linewidth=2, capsize=10, color='yellow')
+barplot_2 = ax.bar(x_pos + width + width*0.2, asb_CTEs, width,  yerr=asb_error, alpha=0.65, ecolor='black', edgecolor='black', linewidth=3, capsize=10, color='darkblue')
+# barplot[0].set_color('yellow')
+# barplot[1].set_color('coral')
+# barplot[2].set_color('crimson')
+# barplot[3].set_color('darkmagenta')
+# barplot[4].set_color('darkblue')
 ax.set_ylabel('Percentage of visible pad')
-ax.set_xticks(x_pos)
+ax.set_xticks(x_pos+width)
 ax.set_xticklabels(['FABRIK','PIC','PICs \u03B7=1', 'PICs \u03B7=2', 'PICs \u03B7=3'])
 ax.set_title('POA for different levels of softening')
 ax.yaxis.grid(True)
+ax.legend( (barplot_1[0], barplot_2[0]), ('Incision', 'Assembly') )
+
+def autolabel(rects):
+    for rect in rects:
+        h = rect.get_height()
+        ax.text(rect.get_x()+rect.get_width()/2., 1.05*h, '%d'%int(h),
+                ha='center', va='bottom')
+
+autolabel(barplot_1)
+autolabel(barplot_2)
 
 # Save the figure and show
 plt.tight_layout()
