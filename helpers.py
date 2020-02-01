@@ -108,14 +108,19 @@ def get_projection(joint_center,offset_matrix, constraint_index, target, toleran
         else:
             return c2.value#, normal, c1, c2
 
-def is_conic_intersection(center, target, h_target, angle):
-    pass
-    # get h_target - robot center
-    # get robot target - robot center
-    # if the angle between these elements is > than the angle of the constraint
-        # return false
-    # else return true
-def get_conic_projection(center, target, h_center, h_target, angle):
+def is_conic_intersection(center, target, axis, angle):
+    center = vec(*center)
+    target = vec(*target)
+    axis = axis
+    angle = angle
+    constraint_axis = axis - center
+    robot_axis = target - center
+    if diff_angle(constraint_axis, robot_axis) < np.radians(angle):
+        return True
+    else:
+        return False
+
+def get_conic_projection(center, target, axis, angle):
     pass
     # get the length of the human arm
     # get the length of the robot joint
