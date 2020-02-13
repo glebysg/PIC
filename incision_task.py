@@ -130,6 +130,7 @@ if task == "assembly":
     # occlussion calculation pad
     pad = box(pos=pad_offset, length=length, height=height, width=width,
             axis=pad_axis,  opacity=0.5, color=color.white)
+    pad.visible = False
     # create the two pieces of assembly
     # width=width, texture={'file': pad_path, place:['right']})
 else:

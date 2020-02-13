@@ -38,6 +38,7 @@ class ikChain:
         self.render_scale = render_scale
         # self.ik_sphere=None
         self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
+        self.ik_sphere.visible = False
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
         # Create an empty list for the constraints and for the joint points
