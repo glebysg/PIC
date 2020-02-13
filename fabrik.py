@@ -281,7 +281,6 @@ class ikChain:
                 constr_region = self.pose_constraints[constr_index][1]
                 ##### check if the link intercepts the constraint region
                 # check the intersection by conic constraint
-                intersects = False
                 if self.conic_constraints is not None:
                     axis = self.human_axis[constr_index]
                     constraint_angle = self.conic_constraints[constr_index]
@@ -291,6 +290,16 @@ class ikChain:
                             axis,
                             constraint_angle
                             )
+
+                    # if it doesnt intersect project the link so it falls
+                    # inside the conic constraint
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_conic_projection(self.points[i],
+                                target,
+                                axis,
+                                constraint_angle)
+                        new_orientation = normalize(new_orientation)
                 # check the intersection by cuadrant constraint
                 else:
                     intersects = is_constraint_intersection(
@@ -298,16 +307,16 @@ class ikChain:
                             self.base_offsets,
                             constr_region,
                             target)
-                # if it doesnt, find the the side of the sub-cube that
-                # the link can be projected to.
-                if not intersects:
-                    # Change the orientation to the one of the projection
-                    new_orientation = get_projection(self.points[i],
-                            self.base_offsets,
-                            constr_region,
-                            target,
-                            self.soften)
-                    new_orientation = normalize(new_orientation)
+                    # if it doesnt intersect, find the the side of the
+                    # sub-cube that the link can be projected to.
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_projection(self.points[i],
+                                self.base_offsets,
+                                constr_region,
+                                target,
+                                self.soften)
+                        new_orientation = normalize(new_orientation)
             # change the position of the point at the
             # end of the link
             self.chain[i].orientation = new_orientation

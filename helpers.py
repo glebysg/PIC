@@ -120,25 +120,18 @@ def is_conic_intersection(center, target, axis, angle):
     else:
         return False
 
-def get_conic_projection(center, target, axis, angle):
+def get_conic_projection(r_joint, r_target, h_axis, angle):
+    r_axis = vec(*r_target) - vec(*r_joint)
+    # human link translated to the robot joint
+    r_to_h_axis = r_axis+h_axis
+    # get the normal to the plane formed between
+    # the robot and the translated human axis
+    norm_rh = cross(r_axis, r_to_h_axis).norm()
+    # rotate the human axis +- theta degrees about
+    # the normal using the rodrigez formula
+
+
     pass
-    # get the length of the human arm
-    # get the length of the robot joint
-    # get the robot vector
-        # target - center
-    # get the human arm and translate it to the robot arm
-        # h_target - center. normalize, multiply by length of the robot joint.
-    # get the ammount in x that we have to offset in the plane
-        # do tan(constraint_angle)*add(robot)= opp
-    # get the plane orthogonal to the human arm vector (robot length height)
-    # define the equation of the circle centered in the plane target with radius of
-    # size x
-    # project the robot vector to the plane
-    # subtract the origin of the plane to the robot projection
-    # get the closest point to the circle
-    # return to the original coorninate system
-        # add the origin of thep plane's coordinate system, add the  robot's center. :)
-    # return that vector
 
 def get_constraint(center, target, constraint_matrix):
     center = vec(*center)
