@@ -1,18 +1,19 @@
 import numpy as np
 from os import path
-tasks = ['incision_curvy', 'incision_straight']
+tasks = ['incision_curvy1', 'incision_straight3', 'assembly1', 'assembly2', 'assembly3']
 robots = ["yumi","baxter"]
 algorithms = ['fabrik', 'poseimit0', 'poseimit3']
-out_path = 'data/results/'
+out_path = 'data/unfiltered_results/'
+# out_path = 'data/rss_results/'
 pose_file = "pose.txt"
 occlussion_file = "occlussion.txt"
 distance_file = "distances.txt"
-pose_writer = open(out_path+pose_file,"w+")
-occlussion_writer = open(out_path+occlussion_file, "w+")
-distance_writer = open(out_path+distance_file, "w+")
+pose_writer = open(path.join(out_path,pose_file),"w+")
+occlussion_writer = open(path.join(out_path+occlussion_file), "w+")
+distance_writer = open(path.join(out_path+distance_file), "w+")
 show_std = True
 dec = "{:.2f}"
-
+task_count=0
 for task in tasks:
     for robot in robots:
         pose_line = ""
@@ -21,12 +22,13 @@ for task in tasks:
         h_occ_mean = ""
         h_occ_std = ""
         for algorithm in algorithms:
-            name = out_path+task+"_"+ robot + "_" + algorithm + ".txt"
+            name = path.join(out_path,task+"_"+ robot + "_" + algorithm + ".txt")
             if path.exists(name):
                 print("Processing:", name)
                 result = np.loadtxt(name, delimiter=' ')
-                result[:,2] = result[:,2]
-                result[:,1] = result[:,1]
+                if "assembly" in task:
+                    result[:,2] = 1- result[:,2]
+                    result[:,1] = 1- result[:,1]
                 means = np.mean(result, axis=0)
                 stds = np.std(result, axis=0)
                 pose_line += dec.format(means[0])

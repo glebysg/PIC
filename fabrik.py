@@ -13,8 +13,7 @@ class ikLink:
 
 class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
-            pose_imitation=False, human_joint_index=None,
-            conic_constraints=None,soften=0,
+            pose_imitation=False, human_joint_index=None, soften=0,
             filtering=True, filter_threshold=10, render_task=False,
             render_scale=1):
         # initialize the canvas
@@ -44,6 +43,7 @@ class ikChain:
         # Create an empty list for the constraints and for the joint points
         self.pose_constraints = []
         self.points = []
+        self.conic_constraints = None
         # Filtering flag to smooth movement in pose imitation mode
         self.filtering = filtering
         # Angle change threshold at witch filtering occurs
@@ -53,7 +53,6 @@ class ikChain:
             self.base_lenght = 6
             self.base_offsets = self.get_base_offsets()
             self.soften = soften
-            self.conic_constraints = conic_constraints
         self.iter_counter = 0
         self.filtered_counter = 0
 
@@ -78,16 +77,31 @@ class ikChain:
         self.pose_constraints.append(
                 (self.human_joint_index[2],constraints[3],'in'))
 
-    def init_skeleton(self, init_constraints=None):
+    def create_conic_constraints(self, human_points):
+        self.human_axis = []
+        # Shoulder
+        axis = normalize(human_points[1] - human_points[0])
+        self.human_axis.append(vec(*axis))
+        # Elbow
+        axis = normalize(human_points[0] - human_points[1])
+        self.human_axis.append(vec(*axis))
+        axis = normalize(human_points[2] - human_points[1])
+        self.human_axis.append(vec(*axis))
+        # Hand
+        axis = normalize(human_points[1] - human_points[2])
+        self.human_axis.append(vec(*axis))
+
+    def init_skeleton(self, init_constraints=None, conic_constraints=None):
         # Check if init_constraints is present when using pose imitation
-        if self.pose_imitation and \
-            (init_constraints is None) or (len(init_constraints)==0) :
+        if self.pose_imitation and conic_constraints is None and \
+            ((init_constraints is None) or (len(init_constraints)==0)) :
             raise ValueError('the parameter init_constraints cannot \
                        be empty when using pose imitation')
         # Create the initial pose
         if self.pose_imitation:
             self.create_constraints(init_constraints)
             self.graphic_constraints = []
+            self.conic_constraints = conic_constraints
         # initialize the points
         self.points = self.get_points()
         # draw a box on the base
@@ -128,9 +142,9 @@ class ikChain:
                     size =vec(28,1,10)*self.render_scale,
                     texture=textures.metal)
         # Update constraint position
+        # TODO: update constraints depending on the type of imitation
         if self.pose_imitation:
             self.update_constraints()
-
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
         self.animation_pos=copy.copy(self.points[-1])
@@ -265,24 +279,18 @@ class ikChain:
             if self.pose_imitation and (i,'out') in human_joints:
                 constr_index = human_joints.index((i,'out'))
                 constr_region = self.pose_constraints[constr_index][1]
-                # check if the link intercepts the constraint region
+                ##### check if the link intercepts the constraint region
                 # check the intersection by conic constraint
-                # TODO: second clause missing an equal check
                 intersects = False
-                if self.conic_constraints is not None and\
-                   self.conic_constraints[constr_index] and self.human_points is not None:
-                    constraint = self.conic_constraints[constr_index]
-                    # get the human center and target
-                        # if costraint index < 2
-                            # the human target and center are i and i + 1
-                        # else:
-                            # the human target and center anr i-1 and i :)
-                    # intersects = is_conic_intersection(
-                            # self.points[i],
-                            # target,
-                            # h_target,
-                            # constraint
-                            # )
+                if self.conic_constraints is not None:
+                    axis = self.human_axis[constr_index]
+                    constraint_angle = self.conic_constraints[constr_index]
+                    intersects = is_conic_intersection(
+                            self.points[i],
+                            target,
+                            axis,
+                            constraint_angle
+                            )
                 # check the intersection by cuadrant constraint
                 else:
                     intersects = is_constraint_intersection(
@@ -343,12 +351,14 @@ class ikChain:
             target = backward_point
         self.backward_points = backward_points
 
-    def solve(self, target, constraints=None, human_points=None):
+    def solve(self, target, constraints=None, humman_points=None):
         self.iter_counter += 1
         # Initialize constraints
+        if self.pose_imitation and self.conic_constraints is not None\
+            and humman_points is not None:
+            self.create_conic_constraints(humman_points)
         if self.pose_imitation and constraints is not None:
             self.create_constraints(constraints)
-            self.human_points=human_points
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)

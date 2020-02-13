@@ -13,7 +13,7 @@ import argparse
 import signal
 import sys
 import threading
-
+from os import path
 # signal handler for killing the program
 
 ########## PARAMS ##############
@@ -50,6 +50,8 @@ parser.add_argument('-f', action="store", dest="filter", default="exp",
         help="type of filterered data to use. Options: exp, kalman, double")
 parser.add_argument('--pose_imitation',action="store_true", default=False,
         help="if present, it uses the pose imitation Algorithm")
+parser.add_argument('--conic_constraints',action="store_true", default=False,
+        help="if present, it uses the pose imitation with conic constraints")
 parser.add_argument('--append',action="store_true", default=False,
         help="if present, append to the file instead of rewriting it")
 parser.add_argument('--filtering',action="store_true", default=False,
@@ -80,7 +82,7 @@ robot_config_path = args.config_path+robot+'_config_'\
 print(task_path)
 print(robot_config_path)
 task_datapoints = np.loadtxt(task_path, delimiter=' ')
-out_file = args.output_path+task+"_"+robot+"_"
+out_file = path.join(args.output_path,task+data_version+"_"+robot+"_")
 # get the algorigthm name for the robot file
 algorithm = 'poseimit' if pose_imitation else 'fabrik'
 if pose_imitation:
@@ -88,14 +90,18 @@ if pose_imitation:
 out_file += algorithm+".txt"
 
 ###############################
-
 # read robot config
 config_reader = open(robot_config_path)
 robot_config = json.load(config_reader)
 base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
-conic_constraints = robot_config["conic_constraints"] if "conic_constraints" in robot_config else None
+# Use conic constraints only when presnet in the config an indicated
+# through the arguments
+if args.conic_constraints and "conic_constraints" in robot_config:
+    conic_constraints = robot_config["conic_constraints"]
+else:
+    conic_constraints = None
 scale = robot_config["scale"]
 task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
@@ -183,18 +189,18 @@ print(pad_points[0])
 # initialize robot arms
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, conic_constraints=conic_constraints,
-        soften=soften, filtering=filtering, filter_threshold=filter_threshold,
+        iterations=iterations, soften=soften, filtering=filtering,
+        filter_threshold=filter_threshold,
         render_task=task, render_scale=scale)
 arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
-        iterations=iterations, conic_constraints=conic_constraints,
-        soften=soften, filtering=filtering, filter_threshold=filter_threshold,
+        iterations=iterations, soften=soften, filtering=filtering,
+        filter_threshold=filter_threshold,
         render_task=task, render_scale=scale)
-arm_r.init_skeleton(init_constraints=init_constraints)
-arm_l.init_skeleton(init_constraints=init_constraints)
-arm_r.solve([-10, -70.0, 15.0],init_constraints)
-arm_l.solve([60, -70.0, 15.0],init_constraints)
+arm_r.init_skeleton(init_constraints=init_constraints, conic_constraints=conic_constraints)
+arm_l.init_skeleton(init_constraints=init_constraints, conic_constraints=conic_constraints)
+# arm_r.solve([-10, -70.0, 15.0],init_constraints,conic_constraints,)
+# arm_l.solve([60, -70.0, 15.0],init_constraints,conic_constraints,)
 # Adjust translation and scaling of the human arms.
 # For the rotation we have to multiply X and Z by -1
 # with open(skel_path, 'r') as skel_file:
@@ -205,13 +211,10 @@ human_r_chain = []
 skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
-task_metics = []
-
-
-# DELETE
-draw_points = None
+task_metrics = []
 
 for current_point, current_arm in zip(task_datapoints, task_arm):
+    print ("CURRENT ARM", current_arm)
     # Read lines until you get to the line that you want
     init_point = current_point[0]
     end_point = current_point[1]
@@ -318,7 +321,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         h_elbow_l = h_elbow_l- pad_origin
         h_wrist_l = h_wrist_l - pad_origin
         # calculate the left human and robot occlusion area
-        if current_arm == "left" or "both":
+        if current_arm == "left" or current_arm == "both":
             ####### only calculate if the wrist was under the pad
             if wrist_under_occlusion_area(h_wrist_l,pad_dim,pad_axis,scale):
                 ############ get the human occluded area calculation ###########
@@ -334,8 +337,6 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
                 # get the area under the curve for each joint
                 elbow_index = human_joint_index[1]
                 r_occlussion_count = 0
-                # DELETE
-                d_points = []
                 for joint_i in range(elbow_index, len(arm_l.points)-1):
                     joint_1 = project_to_plane(pad_normal,pad_origin,arm_l.points[joint_i])
                     joint_2 = project_to_plane(pad_normal,pad_origin,arm_l.points[joint_i+1])
@@ -347,7 +348,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
                             pad_proj,pad_orth)
                 r_occluded_area = r_occlussion_count/float(pad_proj*pad_orth)
                 r_occlussions.append(r_occluded_area)
-        if current_arm == "right" or "both":
+        if current_arm == "right" or current_arm == "both":
             ####### only calculate if the wrist was under the pad
             if wrist_under_occlusion_area(h_wrist_r,pad_dim,pad_axis,scale):
                 ############ get the human occluded area calculation ###########
@@ -404,7 +405,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     print("HUMAN OCCLUDED AREA %.3f" % np.mean(h_occlussions))
     print("ROBOT OCCLUDED AREA %.3f" % np.mean(r_occlussions))
     print("MEAN SQUARED ERROR:", str(round(np.mean(mse_list),2)))
-    task_metics.append([pose_percentage, np.mean(h_occlussions), np.mean(r_occlussions), np.mean(mse_list)])
+    task_metrics.append([pose_percentage, np.mean(h_occlussions), np.mean(r_occlussions), np.mean(mse_list)])
     # angles= np.mean(angles/max(angles))
     # distances= np.array(distances)
     # distances= np.mean(distances/max(distances))
@@ -414,13 +415,15 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
     print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
 
-task_metics = np.array(task_metics)
+task_metrics = np.array(task_metrics)
 if file_append:
     old_metrics = np.loadtxt(out_file, delimiter=' ')
     print(old_metrics)
-    task_metics = np.concatenate((old_metrics, task_metics), axis=0)
-    print(task_metics)
-np.savetxt(out_file, task_metics, delimiter=' ')
+    task_metrics = np.concatenate((old_metrics, task_metrics), axis=0)
+    print(task_metrics)
+print(task_metrics)
+print(out_file)
+np.savetxt(out_file, task_metrics, delimiter=' ')
 
 scene.delete()
 print("DONE!")
