@@ -5,7 +5,6 @@ from pprint import pprint as pp
 from helpers import *
 import math
 
-
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
         self.length = length
@@ -120,32 +119,51 @@ class ikChain:
             link = cylinder(pos=pos, axis=axis, radius=2)
             self.graphic_ik.append(joint)
             self.graphic_ik.append(link)
-        # Create the visual constraints
-        prev_joint = -1
-        for index in range(len(self.pose_constraints)):
-            # Create the cubes representing the constraints
-            constraint = self.pose_constraints[index]
-            current_joint = constraint[0]
-            if prev_joint != current_joint:
-                constraint_cluster = []
-                for i in range(len(self.base_offsets)):
-                    c_color = color.orange if i == constraint[1] else color.white
-                    constraint_cluster.append(box(pos=vec(0,0,0),
-                            length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
-                            opacity=0.5, color=color.white))
-                self.graphic_constraints.append(constraint_cluster)
-                prev_joint = current_joint
+        ########### Create the visual constraints
+        # if we are going to use conic constraints
+        if self.conic_constraints:
+            axis_len = self.base_lenght*2
+            is_out = True
+            for angle in conic_constraints:
+                radius = np.tan(np.radians(angle/2.0))*axis_len
+                cone_color = color.orange if is_out else color.yellow
+                self.graphic_constraints.append(
+                    cone(pos=vec(0,0,0),
+                        axis=vec(axis_len,0,0),
+                        radius=radius,
+                        color=cone_color))
+                is_out = not is_out
+        # if we are using cubic constraints
+        else:
+            prev_joint = -1
+            for index in range(len(self.pose_constraints)):
+                # Create the cubes representing the constraints
+                constraint = self.pose_constraints[index]
+                current_joint = constraint[0]
+                if prev_joint != current_joint:
+                    constraint_cluster = []
+                    for i in range(len(self.base_offsets)):
+                        c_color = color.orange if i == constraint[1] else color.white
+                        constraint_cluster.append(box(pos=vec(0,0,0),
+                                length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
+                                opacity=0.5, color=color.white))
+                    self.graphic_constraints.append(constraint_cluster)
+                    prev_joint = current_joint
+        # add gripper
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
                 axis=axis, color=color.green)
+        ########### finish visual constraints
         # create task-based elements
         if self.render_task == "assembly":
             self.assembly_piece =  box(pos=vec(0,0,0),
                     size =vec(28,1,10)*self.render_scale,
                     texture=textures.metal)
         # Update constraint position
-        # TODO: update constraints depending on the type of imitation
         if self.pose_imitation:
-            self.update_constraints()
+            if self.conic_constraints:
+                self.update_conic_constraints
+            else:
+                self.update_constraints()
         # Create the ik ball to manipulate the chain and bind the drag
         self.ik_sphere.pos=vec(*self.points[-1])
         self.animation_pos=copy.copy(self.points[-1])
@@ -212,6 +230,26 @@ class ikChain:
                         self.graphic_constraints[constr_index - index_offset][base_index].color = c_color
             prev_joint = current_joint
 
+    def update_conic_constraints(self):
+        for index in range(len(self.human_axis)):
+            # get the constraint that corresponds to the human joint
+            constraint = self.pose_constraints[index]
+            # Get the position of the joint for the costraint
+            current_joint = constraint[0]
+            cone_len = mag(self.graphic_constraints[index].axis)
+            cone_axis = copy.copy(self.human_axis[index])
+            cone_axis = norm(cone_axis)*cone_len
+            if current_joint*2 == len(self.graphic_ik):
+                cone_pos = self.gripper.pos
+            else:
+                cone_pos = self.graphic_ik[current_joint*2].pos
+            cone_pos += cone_axis
+            # Get it in the opposite direction to draw the cone correctly
+            # cone_axis = -1*cone_axis
+            # update axis and position
+            self.graphic_constraints[index].axis = -cone_axis
+            self.graphic_constraints[index].pos = cone_pos
+
     def draw_chain(self):
         axis = None
         for index in range(len(self.chain)):
@@ -225,7 +263,10 @@ class ikChain:
         self.gripper.pos = vec(*self.points[-1])
         self.gripper.axis = axis
         if self.pose_imitation:
-            self.update_constraints()
+            if self.conic_constraints:
+                self.update_conic_constraints()
+            else:
+                self.update_constraints()
         # Render Task-dependent elements in the chain
         if self.render_task == "assembly":
             axis = vec(*normalize(axis.value))
@@ -291,7 +332,6 @@ class ikChain:
                             axis,
                             constraint_angle
                             )
-
                     # if it doesnt intersect project the link so it falls
                     # inside the conic constraint
                     if not intersects:
@@ -335,27 +375,50 @@ class ikChain:
             # if there are constraints for the target
             # and the constraint is going into the cube
             if self.pose_imitation and (i+1, 'in') in human_joints:
-                constraint_index = human_joints.index(((i+1),'in'))
-                constr_region = self.pose_constraints[constraint_index][1]
+                constr_index = human_joints.index(((i+1),'in'))
+                constr_region = self.pose_constraints[constr_index][1]
+                ##### check if the link intercepts the constraint region
+                # check the intersection by conic constraint
+                if self.conic_constraints is not None:
+                    axis = self.human_axis[constr_index]
+                    constraint_angle = self.conic_constraints[constr_index]
+                    intersects = is_conic_intersection(
+                            target,
+                            self.points[i],
+                            axis,
+                            constraint_angle)
+                    # if it doesnt intersect project the link so it falls
+                    # inside the conic constraint
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_conic_projection(
+                                target,
+                                self.points[i],
+                                axis,
+                                constraint_angle)
+                        new_orientation = normalize(new_orientation)
+                # check the intersection by cuadrant constraint
                 # check if the link intercepts the constraint region
                 # since we are going backwards, the constraint region
                 # is centered at the target, and the target is the
                 # previous joint (self.point[i])
-                intersects = is_constraint_intersection(
-                        target,
-                        self.base_offsets,
-                        constr_region,
-                        self.points[i])
-                # if it doesnt, find the the side of the sub-cube that
-                # the link can be projected to.
-                if not intersects:
-                    # Change the orientation to the one of the projection
-                    new_orientation = get_projection(target,
+                else:
+                    intersects = is_constraint_intersection(
+                            target,
                             self.base_offsets,
                             constr_region,
-                            self.points[i],
-                            self.soften)
-                    new_orientation = normalize(new_orientation)
+                            self.points[i])
+                    # if it doesnt, find the the side of the sub-cube that
+                    # the link can be projected to.
+                    if not intersects:
+                        # Change the orientation to the one of the projection
+                        new_orientation = get_projection(
+                                target,
+                                self.base_offsets,
+                                constr_region,
+                                self.points[i],
+                                self.soften)
+                        new_orientation = normalize(new_orientation)
             backward_point = target + new_orientation*self.chain[i].length
             backward_points.append(backward_point)
             target = backward_point

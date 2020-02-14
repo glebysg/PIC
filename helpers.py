@@ -129,9 +129,16 @@ def get_conic_projection(r_joint, r_target, h_axis, angle):
     norm_rh = cross(r_axis, r_to_h_axis).norm()
     # rotate the human axis +- theta degrees about
     # the normal using the rodrigez formula
-
-
-    pass
+    rot_plus = rotate(r_to_h_axis, angle=np.radians(angle),
+            axis=norm_rh)
+    rot_minus = rotate(r_to_h_axis, angle=np.radians(-angle),
+            axis=norm_rh)
+    # get which rotated human axis is closer to the robot axis
+    # and return the closest
+    if diff_angle(r_axis, rot_plus) < diff_angle(r_axis, rot_minus):
+        return rot_plus.value
+    else:
+        return rot_minus.value
 
 def get_constraint(center, target, constraint_matrix):
     center = vec(*center)

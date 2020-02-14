@@ -2,6 +2,7 @@
     "base":[55.6,0,0],
     "human_joint":[0,2,4],
     "constraints":[8,3,7,6],
+    "conic_constraints":[90,60,30,30],
     "offset":[-2.9, 11.6, 194.2],
     "scale": 2.1,
     "pad_dim":[30,0.2,40],
