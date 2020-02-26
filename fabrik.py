@@ -327,12 +327,12 @@ class ikChain:
                     axis = self.human_axis[constr_index]
                     constraint_angle = self.conic_constraints[constr_index]
                     intersects = is_conic_intersection(
-                            self.points[i],
+                           self.points[i],
                             target,
                             axis,
                             constraint_angle
                             )
-                    # if it doesnt intersect project the link so it falls
+                   # if it doesnt intersect project the link so it falls
                     # inside the conic constraint
                     if not intersects:
                         # Change the orientation to the one of the projection
@@ -453,8 +453,10 @@ class ikChain:
             count = 0
             while error > self.tolerance:
                 if self.pose_imitation:
+                    # self.update_conic_constraints()
                     self.py_backward()
                     self.py_forward()
+                    # exit(0)
                 else:
                     self.backward()
                     self.forward()
