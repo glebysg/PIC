@@ -117,7 +117,7 @@ right_h_joints = [8,9,10]
 
 # draw x,y,z
 # initialize new bigger canvas
-iterations = 20
+iterations = 100
 scene = canvas(title='Pose imitation experiments', width=1200, height=800)
 draw_reference_frame(-100,0,100,arrow_size=10)
 

@@ -1,5 +1,6 @@
 Original batch processing
  ______________________________________________________________
+python incision_task.py -s 0 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --conic_constraints
 python incision_task.py -s 0 -t incision_straight -v 3 -r baxter -o data/rss_results/ -f kalman --filtering
 python incision_task.py -s 0 -t incision_straight -v 3 -r yumi -o data/rss_results/ -f kalman --filtering
 python incision_task.py -s 0 -t incision_straight -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 40

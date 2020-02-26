@@ -335,6 +335,7 @@ class ikChain:
                     # if it doesnt intersect project the link so it falls
                     # inside the conic constraint
                     if not intersects:
+                        print("not intersected")
                         # Change the orientation to the one of the projection
                         new_orientation = get_conic_projection(self.points[i],
                                 target,
