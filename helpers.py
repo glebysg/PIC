@@ -111,9 +111,7 @@ def get_projection(joint_center,offset_matrix, constraint_index, target, toleran
 def is_conic_intersection(center, target, axis, angle):
     center = vec(*center)
     target = vec(*target)
-    axis = axis
-    angle = angle
-    constraint_axis = axis - center
+    constraint_axis = center + axis
     robot_axis = target - center
     if diff_angle(constraint_axis, robot_axis) < np.radians(angle):
         return True
