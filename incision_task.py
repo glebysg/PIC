@@ -255,8 +255,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         del human_l_chain[:]
         del human_r_chain[:]
         # draw a new element
-        human_l_chain = draw_debug(offset_human_l, color.yellow,opacity=0.5)
-        human_r_chain = draw_debug(offset_human_r, color.yellow,opacity=0.5)
+        human_l_chain = draw_debug(offset_human_l, color.purple,opacity=0.6)
+        human_r_chain = draw_debug(offset_human_r, color.purple,opacity=0.6)
         # Get the pose of the new element
         l_constraints =[]
         r_constraints =[]

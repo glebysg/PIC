@@ -4,6 +4,7 @@ import copy
 from pprint import pprint as pp
 from helpers import *
 import math
+import cv2
 
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
@@ -20,7 +21,6 @@ class ikChain:
         if pose_imitation and human_joint_index is None:
             raise ValueError('the parameter human_joint_index must be \
                         specified when using pose imitation')
-        elif pose_imitation and len(human_joint_index)!=3:
             raise ValueError('the parameter human_joint_index must be \
                    a list of three indices(integers) indicating\
                    shoulder, elbow and gripper')
@@ -131,6 +131,7 @@ class ikChain:
                     cone(pos=vec(0,0,0),
                         axis=vec(axis_len,0,0),
                         radius=radius,
+                        opacity=0.5,
                         color=cone_color))
                 is_out = not is_out
         # if we are using cubic constraints
@@ -335,7 +336,6 @@ class ikChain:
                    # if it doesnt intersect project the link so it falls
                     # inside the conic constraint
                     if not intersects:
-                        print("not intersected")
                         # Change the orientation to the one of the projection
                         new_orientation = get_conic_projection(self.points[i],
                                 target,
@@ -363,6 +363,8 @@ class ikChain:
             # end of the link
             self.chain[i].orientation = new_orientation
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
+            # DELETE
+            # draw_debug(self.points, color.red)
 
     def py_backward(self):
         target = self.target.copy()
@@ -392,12 +394,24 @@ class ikChain:
                     # inside the conic constraint
                     if not intersects:
                         # Change the orientation to the one of the projection
+                        # DELETE
+                        # print("REORIENTED IN CONSTRAINT", constr_index)
                         new_orientation = get_conic_projection(
                                 target,
                                 self.points[i],
                                 axis,
                                 constraint_angle)
                         new_orientation = normalize(new_orientation)
+                    # DELETE
+                    # h_axis = norm(h_axis)
+                    # r_axis = norm(vec(*new_orientation))
+                    # print("drawig arrow", h_axis, target)
+                    # arrow(pos=(vec(*target)),axis=r_axis, length=50, color=color.magenta)
+                    # arrow(pos=(vec(*target)),axis=r_axis, length=50, color=color.magenta)
+                    # input("Press Enter to continue...")
+                    # arrow(pos=(vec(*target)),axis=h_axis, length=50, color=color.cyan)
+                    # input("Press Enter to continue...")
+                    # DELETE
                 # check the intersection by cuadrant constraint
                 # check if the link intercepts the constraint region
                 # since we are going backwards, the constraint region
@@ -424,6 +438,9 @@ class ikChain:
             backward_points.append(backward_point)
             target = backward_point
         self.backward_points = backward_points
+        # DELETE
+        # draw_debug(backward_points, color.blue)
+        # self.update_conic_constraints()
 
     def solve(self, target, constraints=None, humman_points=None):
         self.iter_counter += 1
@@ -454,10 +471,8 @@ class ikChain:
             count = 0
             while error > self.tolerance:
                 if self.pose_imitation:
-                    # self.update_conic_constraints()
                     self.py_backward()
                     self.py_forward()
-                    # exit(0)
                 else:
                     self.backward()
                     self.forward()

@@ -113,23 +113,21 @@ def is_conic_intersection(center, target, axis, angle):
     target = vec(*target)
     constraint_axis = center + axis
     robot_axis = target - center
-    if diff_angle(constraint_axis, robot_axis) < np.radians(angle):
+    if diff_angle(constraint_axis, robot_axis) < np.radians(angle/2):
         return True
     else:
         return False
 
 def get_conic_projection(r_joint, r_target, h_axis, angle):
     r_axis = vec(*r_target) - vec(*r_joint)
-    # human link translated to the robot joint
-    r_to_h_axis = r_axis+h_axis
     # get the normal to the plane formed between
     # the robot and the translated human axis
-    norm_rh = cross(r_axis, r_to_h_axis).norm()
+    norm_rh = cross(r_axis, h_axis).norm()
     # rotate the human axis +- theta degrees about
     # the normal using the rodrigez formula
-    rot_plus = rotate(r_to_h_axis, angle=np.radians(angle),
+    rot_plus = rotate(h_axis, angle=np.radians(angle/2),
             axis=norm_rh)
-    rot_minus = rotate(r_to_h_axis, angle=np.radians(-angle),
+    rot_minus = rotate(h_axis, angle=np.radians(-angle)/2,
             axis=norm_rh)
     # get which rotated human axis is closer to the robot axis
     # and return the closest
