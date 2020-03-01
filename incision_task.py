@@ -100,6 +100,7 @@ init_constraints = robot_config["constraints"]
 # through the arguments
 if args.conic_constraints and "conic_constraints" in robot_config:
     conic_constraints = robot_config["conic_constraints"]
+    print("CONIC CONSTRAINTS, ", conic_constraints)
 else:
     conic_constraints = None
 scale = robot_config["scale"]

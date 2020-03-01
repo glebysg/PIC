@@ -1,0 +1,12 @@
+{
+    "base":[26,0,0],
+    "human_joint":[0,2,4],
+    "constraints":[8,3,7,6],
+    "conic_constraints":[30,30,60,90],
+    "offset":[-4, 10, 194],
+    "scale": 1.40,
+    "pad_dim":[25,2.3,25],
+    "pad_axis": [1,0,0],
+    "pad_offset":[7, -54.4, 27],
+    "arm": ["right","right","right","right","right","right","right","right","right","right"]
+}
