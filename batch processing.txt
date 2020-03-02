@@ -58,4 +58,148 @@ python incision_task.py -s 3 -t assembly -v 3 -r yumi -o data/rss_results/  --po
 
 
 New Tasks batch processing --------------------------------
-python perform_task.py -t incision_straight -v 3 -r baxter -o data/test_results/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+########################## Rigid
+
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ -p 0.1
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_rigid/ --pose_imitation -p 0.1
+
+####################### rigid to soft
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_to_soft_20/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ -p 0.1
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_rigid_to_soft_10/ -f kalman  --conic_constraints -c simulation/arms_rigid_to_soft/ --pose_imitation -p 0.1
+
+########################## soft to rigid
+
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t incision_straight -v 3 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t incision_curvy -v 1 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 1 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 1 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 2 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 2 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+
+
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_soft_to_rigid_20/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ -p 0.1
+python perform_task.py -t assembly -v 3 -r baxter -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+python perform_task.py -t assembly -v 3 -r yumi -o data/iros_soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
