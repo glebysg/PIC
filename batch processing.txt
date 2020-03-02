@@ -55,3 +55,7 @@ python incision_task.py -s 2 -t assembly -v 3 -r baxter -o data/rss_results/  --
 python incision_task.py -s 2 -t assembly -v 3 -r yumi -o data/rss_results/ -f kalman --pose_imitation --filtering --threshold 25
 python incision_task.py -s 3 -t assembly -v 3 -r baxter -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
 python incision_task.py -s 3 -t assembly -v 3 -r yumi -o data/rss_results/  --pose_imitation -f kalman --filtering --threshold 25
+
+
+New Tasks batch processing --------------------------------
+python perform_task.py -t incision_straight -v 3 -r baxter -o data/test_results/ -f kalman  --conic_constraints -c simulation/arms_rigid/

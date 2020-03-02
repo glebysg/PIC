@@ -32,6 +32,8 @@ parser.add_argument('-s', action="store", dest="soften", default=3,
                 the valiues can go from 1 to 3")
 parser.add_argument('-w', action="store", dest="sleep_time", default=0.02,
         type=float, help="waiting time between datapoint updates ")
+parser.add_argument('-p', action="store", dest="pose_threshold", default=0.2,
+        type=float, help="Percentage of the angle range that will be use to determine if the pose is acccurate")
 parser.add_argument('-t', action="store", dest="task", default='incision_straight',
         help="name of the task to execute, example 'incision_straight'")
 parser.add_argument('-v', action="store", dest="data_version",
@@ -62,6 +64,7 @@ parser.add_argument('--threshold', action="store", dest="filtering_threshold", d
 args = parser.parse_args()
 soften = args.soften
 sleep_time = args.sleep_time
+pose_threshold = args.pose_threshold
 robot = args.robot
 data_version = args.data_version
 task = args.task
@@ -83,11 +86,6 @@ print(task_path)
 print(robot_config_path)
 task_datapoints = np.loadtxt(task_path, delimiter=' ')
 out_file = path.join(args.output_path,task+data_version+"_"+robot+"_")
-# get the algorigthm name for the robot file
-algorithm = 'poseimit' if pose_imitation else 'fabrik'
-if pose_imitation:
-    algorithm += str(soften)
-out_file += algorithm+".txt"
 
 ###############################
 # read robot config
@@ -109,9 +107,15 @@ pad_offset = vec(*robot_config["pad_offset"])
 pad_axis = vec(*robot_config["pad_axis"])
 pad_dim = robot_config["pad_dim"]
 
-########## Other Params ##############################
-# d_weight =  
-# d_weight = 1
+# get the algorigthm name for the robot file
+if args.conic_constraints and "conic_constraints" in robot_config:
+    algorithm = 'posecones'
+elif pose_imitation:
+    algorithm = 'poseimit'
+    algorithm += str(soften)
+else:
+    algorithm = 'fabrik'
+out_file += algorithm+".txt"
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -328,7 +332,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             sum_diffs = sum(map(lambda x: (abs(x)**2*1/3.0), angle_diffs))
             # Append the squared differences in angles
             angles.append(sum_diffs)
-            human_angles.append(sh_angle_h*0.5+el_angle_h*0.5)
+            human_angles.append(sh_angle_h*1/3.0+el_angle_h*1/3.0+wr_angle_h*1/3.0)
             # distances.append((dist_h_l-dist_r_l)**2)
         elif current_arm == "right" or current_arm == "both":
             #### The same process but with the right arm
@@ -357,7 +361,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             sum_diffs = sum(map(lambda x: (abs(x)**2)*1/3.0, angle_diffs))
             # Append the squared differences in angles
             angles.append(sum_diffs)
-            human_angles.append(sh_angle_h*0.5+el_angle_h*0.5)
+            human_angles.append(sh_angle_h*1/3.0+el_angle_h*1/3.0+wr_angle_h*1/3.0)
         #################################################################
         ############ get the human occluded area ########################
         pad_origin = pad_points[0]
@@ -436,7 +440,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     # angles = angles/human_mean
     # if the angle is less than 5 degrees
     # if the angle is less than 10% of the average movement
-    angles_mask = (angles <= human_std*2).astype(int)
+    angles_mask = (angles <= human_mean*pose_threshold).astype(int)
     # angles_mask = (angles <= 0.17).astype(int)
     pose_percentage = sum(angles_mask)/float(len(angles_mask))
     print(robot, task, "soften:", soften, "PI:", pose_imitation)

@@ -2,7 +2,8 @@ import numpy as np
 from os import path
 tasks = ['incision_curvy1', 'incision_straight3', 'assembly1', 'assembly2', 'assembly3']
 robots = ["yumi","baxter"]
-algorithms = ['fabrik', 'poseimit0', 'poseimit3']
+# algorithms = ['fabrik', 'poseimit0', 'poseimit3']
+algorithms = ['fabrik', 'posecones']
 out_path = 'data/unfiltered_results/'
 # out_path = 'data/rss_results/'
 pose_file = "pose.txt"
