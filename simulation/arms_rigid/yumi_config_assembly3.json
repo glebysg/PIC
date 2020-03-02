@@ -2,11 +2,11 @@
     "base":[26,0,0],
     "human_joint":[0,3,4],
     "constraints":[8,3,7,6],
-    "conic_constraints":[90,60,30, 30],
+    "conic_constraints":[40,40,40,40],
     "offset":[-8, 10, 191],
-    "scale": 1.7,
-    "pad_dim":[40,60,0.2],
-    "pad_offset":[9.7, -18.7, 64.5],
+    "scale": 2,
+    "pad_dim":[30,0.2,40],
+    "pad_offset":[37.3, -7.2, 15],
     "pad_axis": [0,1,0],
     "arm": ["both","both","both","both","both","both","both","both","both","both"]
 }
