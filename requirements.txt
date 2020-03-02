@@ -2,7 +2,7 @@ appnope==0.1.0
 attrs==19.3.0
 autobahn==19.10.1
 backcall==0.1.0
-bleach==3.1.0
+bleach>=3.1.1
 certifi==2019.9.11
 cffi==1.13.1
 chardet==3.0.4
@@ -10,6 +10,7 @@ colorama==0.4.1
 configparser==4.0.2
 crayons==0.3.0
 cryptography==2.8
+opencv-contrib-python
 cycler==0.10.0
 decorator==4.4.1
 defusedxml==0.6.0
