@@ -2,6 +2,7 @@ from vpython import *
 import math
 import itertools
 import numpy as np
+from sympy import *
 
 def normalize(vector):
     return np.array(vector,dtype=float)/np.linalg.norm(vector)
@@ -301,6 +302,33 @@ def get_joint_occlussion(joint_1,joint_2,pad_x_index,pad_y_index,pad_proj,pad_or
     # if len(d_points)>0:
         # points(pos=d_points, radius=1, color=color.red)
     return occlussion_count
+
+
+# Input: a DH simbolic matrix. Read the readme.md for more
+# information about the function format
+# output: a list of homogeneous
+# transformations from the frame of joint i-1 to the frame
+# of the joint i. Each homogeneous transformation will be
+# a lambda-function that will receive all the current
+# joint values and evaluate the current transformation matrix
+# accordingly.
+def get_transformations(dh, variables):
+    row, col = dh.shape
+    t_matrix_list = []
+    r = pi/180 # constant to convert degrees to radians
+    for i in range(row):
+        alpha_i = dh[i,0]*r
+        a_i = dh[i,1]
+        d_i = dh[i,2]
+        theta_i = dh[i,3]*r
+        t = Matrix([
+            [cos(theta_i), -sin(theta_i)*cos(alpha_i), sin(theta_i)*sin(alpha_i), a_i*cos(theta_i)],
+            [sin(theta_i), cos(theta_i)*cos(alpha_i), -cos(theta_i)*sin(alpha_i), a_i*sin(theta_i)],
+            [0, sin(alpha_i), cos(alpha_i), d_i],
+            [0, 0, 0, 1],
+            ])
+        t_matrix_list.append(lambdify(variables, t, "numpy"))
+    return t_matrix_list
 
 
 if __name__ == "__main__":

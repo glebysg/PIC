@@ -533,3 +533,9 @@ def read_arm(path):
         left_chain.append(ikLink(length=link[0],orientation=link[1:4]))
         right_chain.append(ikLink(length=link[4],orientation=link[5:8]))
     return left_chain, right_chain
+
+def create_arm():
+    chain = []
+    for link in links:
+        # Get orientation of the link
+        pass
