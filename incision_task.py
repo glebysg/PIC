@@ -120,7 +120,7 @@ right_h_joints = [8,9,10]
 # initialize new bigger canvas
 iterations = 100
 scene = canvas(title='Pose imitation experiments', width=1200, height=800)
-draw_reference_frame(-100,0,100,arrow_size=10)
+draw_vpython_reference_frame(-100,0,100,arrow_size=10)
 
 ################### incision/assembly pad  ######################
 pad_points = []

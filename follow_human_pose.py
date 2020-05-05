@@ -56,7 +56,7 @@ right_h_joints = [8,9,10]
 # draw x,y,z
 # initialize new bigger canvas
 # scene = canvas(title='Coaching Gym', width=1200, height=800)
-draw_reference_frame(-100,0,100,arrow_size=10)
+draw_vpython_reference_frame(-100,0,100,arrow_size=10)
 arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=20, soften=soften)

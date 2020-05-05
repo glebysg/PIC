@@ -15,6 +15,8 @@ neutral = (0,-31,0,43,0,72,0)
 home=(0,0,0,0,0,0,0)
 pose = home
 
+
+
 # Define the DH parameter matrix for the Baxter
 # following the format:
 # alpha(degrees), a(mm), d(mm), theta(degrees),
@@ -51,6 +53,68 @@ dh_right = Matrix([
     [90.0 ,0 ,0 ,right_joint_vars[5]]
 ])
 
+# dh_right = Matrix([
+    # [  0,  0.2668,      0, -76.1],
+    # [-90, 0.069,  0.4467, right_joint_vars[0]+ 31.1],
+    # [ 90,  0, 0, right_joint_vars[1]+90],
+    # [-90,0.069, 0.3644, right_joint_vars[2]],
+    # [90, 0, 0, right_joint_vars[3]],
+    # [-90, 0.01, 0.3743, right_joint_vars[4]],
+    # [90, 0, 0, right_joint_vars[5]]
+    # ])
+
+
+# dh_left = Matrix([
+    # [  0,  0.2668,      0, 76.2],
+    # [-90, 0.069,  0.4467, left_joint_vars[0]- 31.2],
+    # [ 90,  0, 0, left_joint_vars[1]+90],
+    # [-90,0.069, 0.3644, left_joint_vars[2]],
+    # [90, 0, 0, left_joint_vars[3]],
+    # [-90, 0.01, 0.3743, left_joint_vars[4]],
+    # [90, 0, 0, left_joint_vars[5]]
+    # ])
+
+# alpha(degrees), a(mm), d(mm), theta(degrees),
+
+############################################################
+
+# dh_left = Matrix([
+    # [  0,  0,      0, left_joint_vars[0]],
+    # [-90, 69,      0, left_joint_vars[1] + 90],
+    # [ 90,  0, 364.35, left_joint_vars[2]],
+    # [-90, 69,      0, left_joint_vars[3]],
+    # [ 90,  0, 374.29, left_joint_vars[4]],
+    # [-90, 10,      0, left_joint_vars[5]],
+    # [ 90,  0, 368.30, left_joint_vars[6]],
+    # ])
+
+# dh_right = Matrix([
+    # [  0,  0,      0, right_joint_vars[0]],
+    # [-90, 69,      0, right_joint_vars[1] + 90],
+    # [ 90,  0, 364.35, right_joint_vars[2]],
+    # [-90, 69,      0, right_joint_vars[3]],
+    # [ 90,  0, 374.29, right_joint_vars[4]],
+    # [-90, 10,      0, right_joint_vars[5]],
+    # [ 90,  0, 368.30, right_joint_vars[6]],
+    # ])
+# torso = Matrix([
+    # [1, 0, 0, 0],
+    # [0, 1, 0, 0],
+    # [0, 0, 1, 270.35],
+    # [0, 0, 0, 1]])
+# l_world = Matrix([
+    # [ sqrt(2)/2, sqrt(2)/2, 0,  278],
+    # [-sqrt(2)/2, sqrt(2)/2, 0,  -64],
+    # [         0,         0, 1, 1104],
+    # [         0,         0, 0,    1]])
+# r_world = Matrix([
+    # [-sqrt(2)/2, sqrt(2)/2, 0, -278],
+    # [-sqrt(2)/2,-sqrt(2)/2, 0,  -64],
+    # [         0,         0, 1, 1104],
+    # [         0,         0, 0,    1]])
+# Add the torso to the world transform
+# l_world = l_world*torso
+# r_world = r_world*torso
 gripper = Matrix([
     [1, 0, 0, 0],
     [0, 1, 0, 0],
@@ -102,9 +166,9 @@ left_pos = np.array([
 [0.44351378083229 , 0.63876533508301, 0.37747138738632],
 [0.63492566347122 , 0.83017534017563, 0.36735194921494],
 [0.71693193912506 , 0.91218090057373, 0.36728006601334]])
-# y_l = -left_pos[:,1]
-# left_pos[:,1]=left_pos[:,2]
-# left_pos[:,2]=y_l
+y_l = -left_pos[:,1]
+left_pos[:,1]=left_pos[:,2]
+left_pos[:,2]=y_l
 # RIGHT POSITIONS
 right_pos = np.array([
 [0.064155280590057, -0.25897043943405, 0.17630106210709],
@@ -114,13 +178,13 @@ right_pos = np.array([
 [0.44387751817703 , -0.63869214057922, 0.37752658128738],
 [0.63528883457184 , -0.83010226488113, 0.36741954088211],
 [0.71729582548141 , -0.91210895776749, 0.36738532781601]])
-
-
-# y_r = -right_pos[:,1]
-# right_pos[:,1]=right_pos[:,2]
-# right_pos[:,2]=y_r
-# left_pos = left_pos*100
-# right_pos = right_pos*100
+y_r = -right_pos[:,1]
+right_pos[:,1]=right_pos[:,2]
+right_pos[:,2]=y_r
+left_pos = left_pos*100
+right_pos = right_pos*100
+draw_debug(left_pos,color.blue)
+draw_debug(right_pos,color.blue)
 # draw the lines
 # for i in range(0,len(l_arm_points)):
     # # Left
@@ -138,37 +202,12 @@ right_pos = np.array([
     # ax.auto_scale_xyz
 # plt.show()
 
-# y_l = -l_arm_points[:,1]
-# y_r = -r_arm_points[:,1]
-# r_arm_points[:,1]=r_arm_points[:,2]
-# l_arm_points[:,1]=l_arm_points[:,2]
-# r_arm_points[:,2]=y_r
-# l_arm_points[:,2]=y_l
-coppelia_left_arm = []
-coppelia_right_arm = []
-row,col=l_arm_points.shape
-for i in range(i):
-    h_left = np.append(l_arm_points[i,:],1)
-    h_right = np.append(r_arm_points[i,:],1)
-    print("h_left", h_left)
-    coppelia_left_arm.append(coppelia_to_vpython(h_left))
-    coppelia_right_arm.append(coppelia_to_vpython(h_right))
-coppelia_left_arm = np.array(coppelia_left_arm)
-coppelia_right_arm = np.array(coppelia_right_arm)
-
-coppelia_left_points = []
-coppelia_right_points = []
-row,col=left_pos.shape
-for i in range(i):
-    h_left = np.append(left_pos[i,:],1)
-    h_right = np.append(right_pos[i,:],1)
-    coppelia_left_points.append(coppelia_to_vpython(h_left))
-    coppelia_right_points.append(coppelia_to_vpython(h_right))
-coppelia_left_points = np.array(coppelia_left_points)
-coppelia_right_points = np.array(coppelia_right_points)
-
-draw_coppelia_reference_frame(0,0,0,arrow_size=10)
-draw_debug(coppelia_left_points*100,color.blue)
-draw_debug(coppelia_right_points*100,color.blue)
-draw_debug(coppelia_left_arm[1:]*100,color.yellow)
-draw_debug(coppelia_right_arm[1:]*100,color.orange)
+y_l = -l_arm_points[:,1]
+y_r = -r_arm_points[:,1]
+r_arm_points[:,1]=r_arm_points[:,2]
+l_arm_points[:,1]=l_arm_points[:,2]
+r_arm_points[:,2]=y_r
+l_arm_points[:,2]=y_l
+draw_vpython_reference_frame(0,0,0,arrow_size=10)
+draw_debug(l_arm_points[1:]*100,color.yellow)
+draw_debug(r_arm_points[1:]*100,color.orange)

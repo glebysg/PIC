@@ -5,6 +5,9 @@ import numpy as np
 from sympy import *
 
 def normalize(vector):
+    l2 = np.linalg.norm(vector)
+    if l2 == 0:
+        return(np.zeros(len(vector)))
     return np.array(vector,dtype=float)/np.linalg.norm(vector)
 
 def distance(vector1, vector2):
@@ -20,13 +23,31 @@ def vec_to_np(vector, dtype):
       vector.z,
       ], dtype=dtype)
 
-def draw_reference_frame(x,y,z,arrow_size=5):
+def draw_vpython_reference_frame(x,y,z,arrow_size=5):
     arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.red)
     arrow(pos=vector(x,y,z), axis=vector(0,arrow_size,0), shaftwidth=1, color=color.green)
     arrow(pos=vector(x,y,z), axis=vector(0,0,arrow_size), shaftwidth=1, color=color.blue)
     text(text='X', align='center', height=5, depth=-0.3, color=color.red,pos=vector(x+arrow_size+1,y,z))
     text(text='Y', align='center', height=5, depth=-0.3, color=color.green,pos=vector(x,y+arrow_size+1,z))
     text(text='Z', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y,z+arrow_size+1))
+
+def draw_coppelia_reference_frame(x,y,z,arrow_size=5):
+    arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.red)
+    arrow(pos=vector(x,y,z), axis=vector(0,arrow_size,0), shaftwidth=1, color=color.green)
+    arrow(pos=vector(x,y,z), axis=vector(0,0,arrow_size), shaftwidth=1, color=color.blue)
+    text(text='Y', align='center', height=5, depth=-0.3, color=color.red,pos=vector(x+arrow_size+1,y,z))
+    text(text='Z', align='center', height=5, depth=-0.3, color=color.green,pos=vector(x,y+arrow_size+1,z))
+    text(text='X', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y,z+arrow_size+1))
+
+def draw_reference_frame(rotation,arrow_size=5):
+    # the position is the translation part
+    pos = vector(*rotation[0:3,3])
+    x_axis = norm(vector(*rotation[0:3,0]))*arrow_size
+    y_axis = norm(vector(*rotation[0:3,1]))*arrow_size
+    z_axis = norm(vector(*rotation[0:3,2]))*arrow_size
+    arrow(pos=pos, axis=x_axis, shaftwidth=1, color=color.red)
+    arrow(pos=pos, axis=y_axis, shaftwidth=1, color=color.green)
+    arrow(pos=pos, axis=z_axis, shaftwidth=1, color=color.blue)
 
 def is_constraint_intersection(joint_center, offset_matrix, constraint_index, target):
     # turn the points into vectors
@@ -330,13 +351,35 @@ def get_transformations(dh, variables):
         t_matrix_list.append(lambdify(variables, t, "numpy"))
     return t_matrix_list
 
+def coppelia_to_vpython(coppelia_frame):
+    # t = np.radians(90)
+    # x_rot = np.array([
+        # [1, 0, 0, 0],
+        # [0, np.cos(t), -np.sin(t), 0],
+        # [0, np.sin(t), np.cos(t), 0],
+        # [0, 0, 0, 1]
+        # ])
+    # y_rot = np.array([
+        # [np.cos(t),0, np.sin(t), 0],
+        # [0, 1, 0, 0],
+        # [-np.sin(t), 0, np.cos(t), 0],
+        # [0, 0, 0, 1]
+        # ])
+    # z_rot = np.array([
+        # [np.cos(t), -np.sin(t), 0, 0],
+        # [np.sin(t), np.cos(t), 0, 0],
+        # [0, 0, 1, 0],
+        # [0, 0, 0, 1]
+        # ])
+    rot = np.array([
+        [0,1,0,0],
+        [0,0,1,0],
+        [1,0,0,0],
+        [0,0,0,1]
+        ])
+    # Remove the homogeneous coordinate element from the vector
+    return np.dot(rot,coppelia_frame)[:-1]
 
 if __name__ == "__main__":
     # execute only if run as a script
     main()
-
-
-
-
-
-
