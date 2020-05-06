@@ -68,8 +68,8 @@ r_t_list += get_transformations(dh_right, right_joint_vars)
 # l_t_list = get_transformations(dh_left, left_joint_vars)
 # r_t_list = get_transformations(dh_right, right_joint_vars)
 # add gripper
-# l_t_list.append(lambdify(left_joint_vars,gripper,'numpy'))
-# r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
+l_t_list.append(lambdify(left_joint_vars,gripper,'numpy'))
+r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
 
 l_arm_points = [[0,0,0]]
 r_arm_points = [[0,0,0]]
@@ -80,6 +80,9 @@ for i in range(len(l_t_list)):
     r_t_i = r_t_list[i]
     l_accum_t = np.dot(l_accum_t, l_t_i(*pose))
     r_accum_t = np.dot(r_accum_t, r_t_i(*pose))
+    # draw the frames from the perspective of the coopelia frame
+    draw_reference_frame(r_accum_t)
+    draw_reference_frame(l_accum_t)
     # get the translation (sice we do not care about the rotation of a point)
     l_arm_points.append(l_accum_t[0:3,3])
     r_arm_points.append(r_accum_t[0:3,3])
@@ -147,23 +150,23 @@ right_pos = np.array([
 coppelia_left_arm = []
 coppelia_right_arm = []
 row,col=l_arm_points.shape
-for i in range(i):
+for i in range(row):
     h_left = np.append(l_arm_points[i,:],1)
     h_right = np.append(r_arm_points[i,:],1)
     print("h_left", h_left)
-    coppelia_left_arm.append(coppelia_to_vpython(h_left))
-    coppelia_right_arm.append(coppelia_to_vpython(h_right))
+    coppelia_left_arm.append(coppelia_pt_to_vpython(h_left))
+    coppelia_right_arm.append(coppelia_pt_to_vpython(h_right))
 coppelia_left_arm = np.array(coppelia_left_arm)
 coppelia_right_arm = np.array(coppelia_right_arm)
 
 coppelia_left_points = []
 coppelia_right_points = []
 row,col=left_pos.shape
-for i in range(i):
+for i in range(row):
     h_left = np.append(left_pos[i,:],1)
     h_right = np.append(right_pos[i,:],1)
-    coppelia_left_points.append(coppelia_to_vpython(h_left))
-    coppelia_right_points.append(coppelia_to_vpython(h_right))
+    coppelia_left_points.append(coppelia_pt_to_vpython(h_left))
+    coppelia_right_points.append(coppelia_pt_to_vpython(h_right))
 coppelia_left_points = np.array(coppelia_left_points)
 coppelia_right_points = np.array(coppelia_right_points)
 
