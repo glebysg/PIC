@@ -34,21 +34,27 @@ def coppelia_pt_to_vpython(coppelia_pt):
     return np.dot(rot,coppelia_pt)[:-1]
 
 def coppelia_frame_to_vpython(coppelia_frame):
-    t = np.radians(90)
-    rot_x = np.array([
-        [1,0,0,0],
-        [0,np.cos(t),-np.sin(t),0],
-        [0,np.sin(t), np.cos(t),0],
-        [0,0,0,1]
-        ])
-    rot_y = np.array([
-        [ np.cos(t),0,np.sin(0),0],
+    # t = np.radians(90)
+    # rot_x = np.array([
+        # [1,0,0,0],
+        # [0,np.cos(t),-np.sin(t),0],
+        # [0,np.sin(t), np.cos(t),0],
+        # [0,0,0,1]
+        # ])
+    # rot_y = np.array([
+        # [ np.cos(t),0,np.sin(0),0],
+        # [0,1,0,0],
+        # [-np.sin(t),0,np.cos(t),0],
+        # [0,0,0,1]
+        # ])
+    rot = np.array([
         [0,1,0,0],
-        [-np.sin(t),0,np.cos(t),0],
+        [0,0,1,0],
+        [1,0,0,0],
         [0,0,0,1]
         ])
     # Remove the homogeneous coordinate element from the vector
-    return np.dot(np.dot(coppelia_frame,rot_x),rot_y)
+    return np.dot(rot,coppelia_frame)
 
 def draw_vpython_reference_frame(x,y,z,arrow_size=5):
     arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.red)

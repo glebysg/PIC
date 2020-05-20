@@ -13,7 +13,7 @@ left_joint_vars = symbols(left_joint_names)
 right_joint_vars = symbols(right_joint_names)
 neutral = (0,-31,0,43,0,72,0)
 home=(0,0,0,0,0,0,0)
-pose = home
+pose = neutral
 
 # Define the DH parameter matrix for the Baxter
 # following the format:
@@ -51,11 +51,27 @@ dh_right = Matrix([
     [90.0 ,0 ,0 ,right_joint_vars[5]]
 ])
 
+# gripper = Matrix([
+    # [1, 0, 0, 0],
+    # [0, 1, 0, 0],
+    # [0, 0, 1, 0.3683],
+    # [0, 0, 0, 1]])
+
 gripper = Matrix([
+    [0, -1, 0, 0],
     [1, 0, 0, 0],
-    [0, 1, 0, 0],
-    [0, 0, 1, 0.3683],
+    [0, 0, 1, 0.1134],
     [0, 0, 0, 1]])
+
+# joint_range=[
+# -9.750e+01, 1.950e+02
+# 1.950e+02, 1.950e+02
+# -1.750e+02, 3.500e+02
+# -2.865e+00, 1.529e+02
+# -1.753e+02, 3.505e+02
+# -9.000e+01, 2.100e+02
+# 2.100e+02,3.505e+02
+# ],
 
 
 #get_robot_points
@@ -81,8 +97,8 @@ for i in range(len(l_t_list)):
     l_accum_t = np.dot(l_accum_t, l_t_i(*pose))
     r_accum_t = np.dot(r_accum_t, r_t_i(*pose))
     # draw the frames from the perspective of the coopelia frame
-    draw_reference_frame(r_accum_t)
-    draw_reference_frame(l_accum_t)
+    draw_reference_frame(r_accum_t, transform=True)
+    draw_reference_frame(l_accum_t, transform=True)
     # get the translation (sice we do not care about the rotation of a point)
     l_arm_points.append(l_accum_t[0:3,3])
     r_arm_points.append(r_accum_t[0:3,3])
@@ -171,7 +187,7 @@ coppelia_left_points = np.array(coppelia_left_points)
 coppelia_right_points = np.array(coppelia_right_points)
 
 draw_coppelia_reference_frame(0,0,0,arrow_size=10)
-draw_debug(coppelia_left_points*100,color.blue)
-draw_debug(coppelia_right_points*100,color.blue)
+# draw_debug(coppelia_left_points*100,color.blue)
+# draw_debug(coppelia_right_points*100,color.blue)
 draw_debug(coppelia_left_arm[1:]*100,color.yellow)
 draw_debug(coppelia_right_arm[1:]*100,color.orange)
