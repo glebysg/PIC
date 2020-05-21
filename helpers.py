@@ -34,19 +34,6 @@ def coppelia_pt_to_vpython(coppelia_pt):
     return np.dot(rot,coppelia_pt)[:-1]
 
 def coppelia_frame_to_vpython(coppelia_frame):
-    # t = np.radians(90)
-    # rot_x = np.array([
-        # [1,0,0,0],
-        # [0,np.cos(t),-np.sin(t),0],
-        # [0,np.sin(t), np.cos(t),0],
-        # [0,0,0,1]
-        # ])
-    # rot_y = np.array([
-        # [ np.cos(t),0,np.sin(0),0],
-        # [0,1,0,0],
-        # [-np.sin(t),0,np.cos(t),0],
-        # [0,0,0,1]
-        # ])
     rot = np.array([
         [0,1,0,0],
         [0,0,1,0],
