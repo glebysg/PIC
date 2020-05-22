@@ -13,7 +13,7 @@ left_joint_vars = symbols(left_joint_names)
 right_joint_vars = symbols(right_joint_names)
 neutral = (0,-31,0,43,0,72,0)
 home=(0,0,0,0,0,0,0)
-pose = neutral
+pose = home
 
 # Define the DH parameter matrix for the Baxter
 # following the format:
@@ -64,6 +64,9 @@ gripper = Matrix([
     [0, 0, 0, 1]])
 
 ignore_tr = [1,0,0,0,0,0,0,1]
+# if the leght of "d" should come before the legth "a"
+# when rendering the robots
+d_first = [1,1,1,1,1,1,1]
 
 # joint_range=[
 # -9.750e+01, 1.950e+02
@@ -89,92 +92,98 @@ r_t_list += get_transformations(dh_right, right_joint_vars)
 l_t_list.append(lambdify(left_joint_vars,gripper,'numpy'))
 r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
 
-
 l_arm_points = [[0,0,0]]
 r_arm_points = [[0,0,0]]
 # initialize the accum transformation matrix with
 # the first evaluated matrix
 l_accum_t = l_t_list[0](*pose)
 r_accum_t = r_t_list[0](*pose)
-
-copp_rot = np.array([
-    [0,1,0,0],
-    [0,0,1,0],
-    [1,0,0,0],
-    [0,0,0,1]
-    ])
+l_prev_accum = np.copy(l_accum_t)
+r_prev_accum = np.copy(r_accum_t)
 
 dh_index = 1
 for i in range(1,len(l_t_list)):
-    l_t_i = l_t_list[i]
-    r_t_i = r_t_list[i]
-    l_accum_t = np.dot(l_accum_t, l_t_i(*pose))
-    r_accum_t = np.dot(r_accum_t, r_t_i(*pose))
+    l_t_i = l_t_list[i](*pose)
+    r_t_i = r_t_list[i](*pose)
+    l_accum_t = np.dot(l_accum_t, l_t_i)
+    r_accum_t = np.dot(r_accum_t, r_t_i)
     # draw the frames from the perspective of the coopelia frame
-    draw_reference_frame(r_accum_t, transform=True)
-    draw_reference_frame(l_accum_t, transform=True)
-    # get the translation (sice we do not care about the rotation of a point)
+    draw_reference_frame(l_prev_accum, transform=True)
+    draw_reference_frame(r_prev_accum, transform=True)
     # get pos
-    l_accum_t[0:3,3]
-    r_accum_t[0:3,3]
     l_arm_points.append(l_accum_t[0:3,3])
     r_arm_points.append(r_accum_t[0:3,3])
     # get the coopelia frame
-    cop_tr_l = coppelia_frame_to_vpython(l_accum_t)
-    cop_tr_r = coppelia_frame_to_vpython(r_accum_t)
+    prev_cop_tr_l = coppelia_frame_to_vpython(l_prev_accum)*100
+    prev_cop_tr_r = coppelia_frame_to_vpython(r_prev_accum)*100
+    cop_tr_l = coppelia_frame_to_vpython(l_accum_t)*100
+    cop_tr_r = coppelia_frame_to_vpython(r_accum_t)*100
     # get base pos
-    pos_l = vec(*(cop_tr_l[0:3,3]*100))
-    pos_r = vec(*(cop_tr_r[0:3,3]*100))
+    pos_l = vec(*(prev_cop_tr_l[0:3,3]))
+    pos_r = vec(*(prev_cop_tr_r[0:3,3]))
     # if we are at the gripper
     if (i-dh_index)<dh_left.shape[0]:
-        print(i-dh_index)
         a_len = dh_left[i-dh_index,1]*100
         d_len = dh_left[i-dh_index,2]*100
-        # draw the joint
-        print("jei")
-        joint_l =  sphere(pos=pos_l,color=color.yellow, radius = 4)
-        print("jei2")
-        joint_r =  sphere(pos=pos_r,color=color.orange, radius = 4)
+    # we are at the gripper
+    else:
+        # draw the current frame
+        draw_reference_frame(l_accum_t, transform=True)
+        draw_reference_frame(r_accum_t, transform=True)
+        a_len = l_t_i[0,3]*100
+        # get the cos(alpha) or sin alpha
+        if l_t_i[1,2] != 0:
+            d_len = (l_t_i[1,3]/l_t_i[1,2])*100
+        elif l_t_i[2,2] !=0:
+            d_len = (l_t_i[2,3]/l_t_i[2,2])*100
+        else:
+            d_len = 0
+        print("gripper a len:", a_len)
+        print("gripper d len:", d_len)
+    # move everything
+    # draw the joint
+    joint_l =  sphere(pos=pos_l,color=color.yellow, radius = 4)
+    joint_r =  sphere(pos=pos_r,color=color.orange, radius = 4)
+    # if the the "d" leght comes first in the robot
+    if d_first[i-dh_index]:
+        axis_l = 0
+        axis_r = 0
         # draw d
         if d_len > 0:
-            # get the z axis of  w.r.t the origin
-            # to homogeneous coordinates
-            d_orientation_l = coppelia_pt_to_vpython(np.append(l_accum_t[0:3,2],1))
-            d_orientation_r = coppelia_pt_to_vpython(np.append(l_accum_t[0:3,2],1))
-            d_orientation_l = normalize(d_orientation_l)
-            d_orientation_r = normalize(d_orientation_r)
-            # d_orientation_l = normalize(cop_tr_l[0:3,2])
-            # d_orientation_r = normalize(cop_tr_r[0:3,2])
-            axis_l = vec(*(d_orientation_l*d_len))
-            axis_r = vec(*(d_orientation_r*d_len))
+            draw_reference_frame(l_prev_accum, transform=True)
+            draw_reference_frame(r_prev_accum, transform=True)
+            # get the z-1 axis of  w.r.t the origin
+            d_orientation_l = vec(*prev_cop_tr_l[0:3,2])
+            d_orientation_r = vec(*prev_cop_tr_r[0:3,2])
+            axis_l= norm(d_orientation_l)*float(d_len)
+            axis_r= norm(d_orientation_r)*float(d_len)
             d_link_l = cylinder(pos=pos_l, axis=axis_l,
                     color=color.yellow,radius=2)
             d_link_r = cylinder(pos=pos_r, axis=axis_r,
                     color=color.orange,radius=2)
         # draw a
         if a_len > 0:
-            # if we had a previous d, start a where the link d ends
             if d_len > 0:
+                # draw a small sphere to make the joint looks smoother
                 pos_l = pos_l + axis_l
                 pos_r = pos_r + axis_r
-            a_orientation_l = normalize(cop_tr_l[0:3,2])
-            a_orientation_r = normalize(cop_tr_r[0:3,2])
-            axis_l = vec(*(a_orientation_l*a_len))
-            axis_r = vec(*(a_orientation_r*a_len))
+                joint_l =  sphere(pos=pos_l,color=color.yellow, radius = 2)
+                joint_r =  sphere(pos=pos_r,color=color.orange, radius = 2)
+            # get the x axis of  w.r.t the origin
+            d_orientation_l = vec(*cop_tr_l[0:3,0])
+            d_orientation_r = vec(*cop_tr_r[0:3,0])
+            axis_l= norm(d_orientation_l)*float(a_len)
+            axis_r= norm(d_orientation_r)*float(a_len)
             a_link_l = cylinder(pos=pos_l, axis=axis_l,
                     color=color.yellow,radius=2)
             a_link_r = cylinder(pos=pos_r, axis=axis_r,
                     color=color.orange,radius=2)
-    # draw joint
-    # pos = vec(*points[index])
-    # length = distance(points[index],points[index+1])
-    # orientation = normalize(points[index+1]-points[index])
-    # axis = vec(*(orientation*length))
-    # joint =  sphere(pos=pos,color=color, radius = 4, opacity=opacity)
-    # link = cylinder(pos=pos, axis=axis, color=color,radius=2,opacity=opacity)
     else:
-        #draw the gripper
-        pass
+        print("IMPLEMENT 'a' distance before 'd'")
+        exit()
+    l_prev_accum = np.copy(l_accum_t)
+    r_prev_accum = np.copy(r_accum_t)
+
 l_arm_points = np.array(l_arm_points)
 r_arm_points = np.array(r_arm_points)
 fig = plt.figure()
@@ -237,6 +246,7 @@ right_pos = np.array([
 coppelia_left_arm = []
 coppelia_right_arm = []
 row,col=l_arm_points.shape
+
 for i in range(row):
     h_left = np.append(l_arm_points[i,:],1)
     h_right = np.append(r_arm_points[i,:],1)

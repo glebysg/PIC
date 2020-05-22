@@ -52,22 +52,18 @@ def draw_vpython_reference_frame(x,y,z,arrow_size=5):
     text(text='Z', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y,z+arrow_size+1))
 
 def draw_coppelia_reference_frame(x,y,z,arrow_size=5):
-    arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.red)
-    arrow(pos=vector(x,y,z), axis=vector(0,arrow_size,0), shaftwidth=1, color=color.green)
-    arrow(pos=vector(x,y,z), axis=vector(0,0,arrow_size), shaftwidth=1, color=color.blue)
-    text(text='Y', align='center', height=5, depth=-0.3, color=color.red,pos=vector(x+arrow_size+1,y,z))
-    text(text='Z', align='center', height=5, depth=-0.3, color=color.green,pos=vector(x,y+arrow_size+1,z))
-    text(text='X', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y,z+arrow_size+1))
+    arrow(pos=vector(x,y,z), axis=vector(arrow_size,0,0), shaftwidth=1, color=color.green)
+    arrow(pos=vector(x,y,z), axis=vector(0,arrow_size,0), shaftwidth=1, color=color.blue)
+    arrow(pos=vector(x,y,z), axis=vector(0,0,arrow_size), shaftwidth=1, color=color.red)
+    text(text='Y', align='center', height=5, depth=-0.3, color=color.green,pos=vector(x+arrow_size+1,y,z))
+    text(text='Z', align='center', height=5, depth=-0.3, color=color.blue,pos=vector(x,y+arrow_size+1,z))
+    text(text='X', align='center', height=5, depth=-0.3, color=color.red,pos=vector(x,y,z+arrow_size+1))
 
 def draw_reference_frame(rotation,arrow_size=10, transform=True):
     # the position is the translation part
-    print("PRE TRANSFORM")
-    print(rotation)
     if transform:
         pos = vector(*((coppelia_pt_to_vpython(rotation[:,3])*100)))
         rot = coppelia_frame_to_vpython(rotation)
-        print("POST TRANSFORM")
-        print(rot)
     else:
         rot = rotation
         pos = vector(*(rot[0:3,3]*100))
