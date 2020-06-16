@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d as plt3d
 from vpython import *
+from copy import copy
 
 # create the symbolic variables that will represent
 # the joint angles
@@ -51,12 +52,6 @@ dh_right = Matrix([
     [90.0 ,0 ,0 ,right_joint_vars[5]]
 ])
 
-# gripper = Matrix([
-    # [1, 0, 0, 0],
-    # [0, 1, 0, 0],
-    # [0, 0, 1, 0.3683],
-    # [0, 0, 0, 1]])
-
 gripper = Matrix([
     [0, -1, 0, 0],
     [1, 0, 0, 0],
@@ -68,16 +63,15 @@ ignore_tr = [1,0,0,0,0,0,0,1]
 # when rendering the robots
 d_first = [1,1,1,1,1,1,1]
 
-# joint_range=[
-# -9.750e+01, 1.950e+02
-# 1.950e+02, 1.950e+02
-# -1.750e+02, 3.500e+02
-# -2.865e+00, 1.529e+02
-# -1.753e+02, 3.505e+02
-# -9.000e+01, 2.100e+02
-# 2.100e+02,3.505e+02
-# ],
-
+joint_range=np.array([
+    [-9.750e+01, 1.950e+02],
+    [ 1.950e+02, 1.950e+02],
+    [-1.750e+02, 3.500e+02],
+    [-2.865e+00, 1.529e+02],
+    [-1.753e+02, 3.505e+02],
+    [-9.000e+01, 2.100e+02],
+    [ 2.100e+02, 3.505e+02],
+])
 
 #get_robot_points
 # Start with the world transformation
@@ -94,6 +88,7 @@ r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
 
 l_arm_points = [[0,0,0]]
 r_arm_points = [[0,0,0]]
+
 # initialize the accum transformation matrix with
 # the first evaluated matrix
 l_accum_t = l_t_list[0](*pose)
@@ -121,7 +116,7 @@ for i in range(1,len(l_t_list)):
     # get base pos
     pos_l = vec(*(prev_cop_tr_l[0:3,3]))
     pos_r = vec(*(prev_cop_tr_r[0:3,3]))
-    # if we are at the gripper
+    # At any joint but the gripper
     if (i-dh_index)<dh_left.shape[0]:
         a_len = dh_left[i-dh_index,1]*100
         d_len = dh_left[i-dh_index,2]*100
