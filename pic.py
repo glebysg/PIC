@@ -6,14 +6,28 @@ from helpers import *
 import math
 import cv2
 
-# Free-moving link
-class ikLink:
-    def __init__(self, length=1, orientation=[1,0,0]):
-        self.length = length
-        self.orientation = np.array(orientation, dtype=float)
+class robotLink:
+    def __init__(self,alpha, a, d, theta):
+        self.alpha = alpha
+        self.a = a
+        self.d = d
+        self.sym_joint = theta
+        self.joint_val = 0
+        # the curremt rotation matrix w.r.t the base
+        self.rotation = None
 
-class ikChain:
-    def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
+        # set the leght
+    # get the current matrix w.r.t the base
+    def get_pos():
+        pass
+         
+     
+class robotChain:
+    # TODO initialize de DH matrix and sym joints in a more user friendly way
+    # e.g. directly from a file
+    def __init__(self, dh_params, sym_joints, ranges,
+            base_matrix=None, gripper_matrix=None,
+            tolerance=0.1, iterations=10,
             pose_imitation=False, human_joint_index=None, soften=0,
             filtering=True, filter_threshold=10, render_task=False,
             render_scale=1):
@@ -25,20 +39,19 @@ class ikChain:
             raise ValueError('the parameter human_joint_index must be \
                    a list of three indices(integers) indicating\
                    shoulder, elbow and gripper')
-        # a 3d point indicating the base of the kinematic chain
-        self.base = np.array(base, dtype=float)
-        # a list of iklinks
-        self.chain = chain
+        # symbolic dhlist of the chain
+        self.dh_params = dh_params
+        # symbolic names of the joints
+        self.sym_joints = sym_joints
+        # joint ranges
+        self.ranges = ranges
         # error tolerance
         self.tolerance = tolerance
         self.iterations = iterations
         # for animation
-        self.drag = True
         self.render_task = render_task
         self.render_scale = render_scale
-        # self.ik_sphere=None
-        self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
-        self.ik_sphere.visible = False
+        # pose imitation settings
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
         # Create an empty list for the constraints and for the joint points
@@ -166,26 +179,6 @@ class ikChain:
                 self.update_conic_constraints
             else:
                 self.update_constraints()
-        # Create the ik ball to manipulate the chain and bind the drag
-        self.ik_sphere.pos=vec(*self.points[-1])
-        self.animation_pos=copy.copy(self.points[-1])
-        def down():
-            self.drag = True
-        def move():
-            if self.drag: # mouse button is down
-                self.ik_sphere.color = color.cyan
-                self.ik_sphere.pos = scene.mouse.pos
-                self.new_pos = vec_to_np(self.ik_sphere.pos, float)
-                if not np.array_equal(self.animation_pos,self.new_pos):
-                    self.animation_pos = copy.copy(self.new_pos)
-                    #Get the target from the sphere
-                    self.solve(self.animation_pos)
-        def up():
-            self.ik_sphere.color = color.red
-            self.drag = False
-        scene.bind("mousedown", down)
-        scene.bind("mousemove", move)
-        scene.bind("mouseup", up)
 
     def update_constraints(self):
         prev_joint = -1
@@ -364,8 +357,6 @@ class ikChain:
             # end of the link
             self.chain[i].orientation = new_orientation
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
-            # DELETE
-            # draw_debug(self.points, color.red)
 
     def py_backward(self):
         target = self.target.copy()
@@ -395,24 +386,12 @@ class ikChain:
                     # inside the conic constraint
                     if not intersects:
                         # Change the orientation to the one of the projection
-                        # DELETE
-                        # print("REORIENTED IN CONSTRAINT", constr_index)
                         new_orientation = get_conic_projection(
                                 target,
                                 self.points[i],
                                 axis,
                                 constraint_angle)
                         new_orientation = normalize(new_orientation)
-                    # DELETE
-                    # h_axis = norm(h_axis)
-                    # r_axis = norm(vec(*new_orientation))
-                    # print("drawig arrow", h_axis, target)
-                    # arrow(pos=(vec(*target)),axis=r_axis, length=50, color=color.magenta)
-                    # arrow(pos=(vec(*target)),axis=r_axis, length=50, color=color.magenta)
-                    # input("Press Enter to continue...")
-                    # arrow(pos=(vec(*target)),axis=h_axis, length=50, color=color.cyan)
-                    # input("Press Enter to continue...")
-                    # DELETE
                 # check the intersection by cuadrant constraint
                 # check if the link intercepts the constraint region
                 # since we are going backwards, the constraint region
@@ -439,9 +418,6 @@ class ikChain:
             backward_points.append(backward_point)
             target = backward_point
         self.backward_points = backward_points
-        # DELETE
-        # draw_debug(backward_points, color.blue)
-        # self.update_conic_constraints()
 
     def solve(self, target, constraints=None, humman_points=None):
         self.iter_counter += 1
