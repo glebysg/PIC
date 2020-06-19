@@ -7,31 +7,47 @@ import math
 import cv2
 
 class robotLink:
-    def __init__(self,alpha, a, d, theta):
+    def __init__(self,alpha, a, d, theta, min_angle, max_angle):
         self.alpha = alpha
         self.a = a
         self.d = d
         self.sym_joint = theta
         self.joint_val = 0
-        # the curremt rotation matrix w.r.t the base
+        self.min_angle  = min_angle
+        self.max_angle = max_angle
+        # the lambidified rotation matrix wrt the base
         self.rotation = None
+        # set the lenght
+        # we need to use the hypothenuse if we have a and d lenght
+        if self.a != 0 and self.d !=0:
+            self.length = math.sqrt(self.a**2+self.d**2)
+        # if we have a d lenght
+        elif d != 0:
+            self.length = d
+        # if we have an a lenght or the legth is zero
+        else:
+            self.length = a
+        ######### visual components ############
+        self.frame = None
+        self.v_d = None
+        self.v_a = None
+        self.v_joint = None
+        # small shpere to smoothen the apearance of
+        # the joint when we have a and d distaces
+        self.v_elbow = None
 
-        # set the leght
     # get the current matrix w.r.t the base
-    def get_pos():
-        pass
-         
-     
+    def eval_rot(self,joint_vals):
+        return self.rotation(*joint_vals)
+
 class robotChain:
     # TODO initialize de DH matrix and sym joints in a more user friendly way
     # e.g. directly from a file
-    def __init__(self, dh_params, sym_joints, ranges,
-            base_matrix=None, gripper_matrix=None,
-            tolerance=0.1, iterations=10,
+    def __init__(self, dh_params, joint_vars, ranges,
+            base_matrix=None, tolerance=0.1, iterations=10,
             pose_imitation=False, human_joint_index=None, soften=0,
             filtering=True, filter_threshold=10, render_task=False,
             render_scale=1):
-        # initialize the canvas
         # param constraint checkup
         if pose_imitation and human_joint_index is None:
             raise ValueError('the parameter human_joint_index must be \
@@ -42,9 +58,17 @@ class robotChain:
         # symbolic dhlist of the chain
         self.dh_params = dh_params
         # symbolic names of the joints
-        self.sym_joints = sym_joints
+        self.joint_vars = joint_vars
+        # list of the robotic links
+        self.rob_links = []
         # joint ranges
         self.ranges = ranges
+        # rotation matrix of the base
+        if base_matrix is None:
+            self.base_matrix = eye(4)
+        else:
+            self.base_matrix = base_matrix
+        self.base_rot = lambdify(self.joint_vars,self.base_matrix,'numpy')
         # error tolerance
         self.tolerance = tolerance
         self.iterations = iterations
@@ -105,34 +129,90 @@ class robotChain:
         axis = normalize(human_points[1] - human_points[2])
         self.human_axis.append(vec(*axis))
 
-    def init_skeleton(self, init_constraints=None, conic_constraints=None):
+    def init_skeleton(self, init_angles, d_first, init_constraints=None, conic_constraints=None):
         # Check if init_constraints is present when using pose imitation
         if self.pose_imitation and conic_constraints is None and \
             ((init_constraints is None) or (len(init_constraints)==0)) :
             raise ValueError('the parameter init_constraints cannot \
                        be empty when using pose imitation')
+        # Initialize the canvas
+        scene.width = 1200
+        scene.height = 800
+        # create the robot links
+        # accumulated matrix multiplication
+        accum_rotations = copy.copy(self.base_matrix)
+        # last evaluated maxtix
+        prev_eval  = np.array(self.base_matrix).astype(np.float64)
+        # from the first joint to the gripper
+        # The rotation at zero is the base origin rotation
+        for i in range(len(init_angles)):
+            # Initialize a new link
+            dh =  self.dh_params.row(i)
+            min_angle = self.ranges[i,0]
+            max_angle = self.ranges[i,1]
+            m_rot = get_transformation(*dh)
+            # Get the rotation w.r.t the base
+            accum_rotations = accum_rotations*m_rot
+            lambda_rot = lambdify(self.joint_vars, accum_rotations, "numpy")
+            link = robotLink(*dh,min_angle,max_angle)
+            link.rotation = lambda_rot
+            # initialize the joint
+            link.joint_val=init_angles[i]
+            ###############################################
+            ###### create the IK elements to be drawn######
+            ###############################################
+            print("INIT ANGLES:", init_angles)
+            current_eval = link.eval_rot(init_angles)
+            # draw the joint frames w.r.t the vpython frame
+            link.frame = draw_reference_frame(prev_eval)
+            # get the previous and current evalulated rotation
+            # with respect to the vpython frame of reference
+            current_eval_vpython = coppelia_frame_to_vpython(current_eval)*100
+            prev_eval_vpython = coppelia_frame_to_vpython(prev_eval)*100
+            # get link origin and legth
+            pos = vec(*(prev_eval_vpython[0:3,3]))
+            a_len = link.a*100
+            d_len = link.d*100
+            # draw the joint
+            link.v_joint = sphere(pos=pos,color=color.orange, radius = 4)
+            # if the the "d" leght comes first in the robot
+            if d_first[i]:
+                # draw d
+                if d_len > 0:
+                    # get the z-1 axis of  w.r.t the origin
+                    d_orientation = vec(*prev_eval_vpython[0:3,2])
+                    axis = norm(d_orientation)*float(d_len)
+                    link.v_d = cylinder(pos=pos, axis=axis,
+                            color=color.orange,radius=2)
+                # draw a
+                if a_len > 0:
+                    # if we had d before
+                    if d_len > 0:
+                        # displace the position of the link
+                        pos = pos + axis
+                        # draw a small sphere to make the joint looks smoother
+                        link.v_elbow =  sphere(pos=pos,color=color.orange, radius = 2)
+                    # get the x axis of  w.r.t the origin
+                    a_orientation = vec(*current_eval_vpython[0:3,0])
+                    axis= norm(a_orientation)*float(a_len)
+                    link.v_a = cylinder(pos=pos, axis=axis,
+                            color=color.orange,radius=2)
+            else:
+                print("IMPLEMENT 'a' distance before 'd'")
+                exit()
+            prev_eval = copy.copy(current_eval)
+            ###############################################
+            ###### create the IK elements to be drawn######
+            ###############################################
+
         # Create the initial pose
         if self.pose_imitation:
             self.create_constraints(init_constraints)
             self.graphic_constraints = []
             self.conic_constraints = conic_constraints
         # initialize the points
+        # TODO update the get points function
         self.points = self.get_points()
-        # draw a box on the base
-        self.base_box = box(pos=vec(*self.base), length=10, height=3, width=10)
-        # Draw each element in the ik chain
-        scene.width = 1200
-        scene.height = 800
-        self.graphic_ik = []
-        axis = None
-        for index in range(len(self.chain)):
-            # Normalize the orientation of the ik link
-            pos = vec(*self.points[index])
-            axis = vec(*(normalize(self.chain[index].orientation)*self.chain[index].length))
-            joint =  sphere(pos=pos,color=color.green, radius = 4)
-            link = cylinder(pos=pos, axis=axis, radius=2)
-            self.graphic_ik.append(joint)
-            self.graphic_ik.append(link)
         ########### Create the visual constraints
         # if we are going to use conic constraints
         if self.conic_constraints:
@@ -272,6 +352,7 @@ class robotChain:
         else:
             self.gripper.size=vec(2,4,4)
 
+    # TODO redo get points
     def get_points(self):
         points = [self.base]
         previous_point = self.base

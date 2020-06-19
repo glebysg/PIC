@@ -70,9 +70,10 @@ def draw_reference_frame(rotation,arrow_size=10, transform=True):
     x_axis = norm(vector(*rot[0:3,0]))*arrow_size
     y_axis = norm(vector(*rot[0:3,1]))*arrow_size
     z_axis = norm(vector(*rot[0:3,2]))*arrow_size
-    arrow(pos=pos, axis=x_axis, shaftwidth=1, color=color.red)
-    arrow(pos=pos, axis=y_axis, shaftwidth=1, color=color.green)
-    arrow(pos=pos, axis=z_axis, shaftwidth=1, color=color.blue)
+    x = arrow(pos=pos, axis=x_axis, shaftwidth=1, color=color.red)
+    y = arrow(pos=pos, axis=y_axis, shaftwidth=1, color=color.green)
+    z = arrow(pos=pos, axis=z_axis, shaftwidth=1, color=color.blue) 
+    return [x,y,z]
 
 def is_constraint_intersection(joint_center, offset_matrix, constraint_index, target):
     # turn the points into vectors
@@ -349,6 +350,25 @@ def get_joint_occlussion(joint_1,joint_2,pad_x_index,pad_y_index,pad_proj,pad_or
         # points(pos=d_points, radius=1, color=color.red)
     return occlussion_count
 
+# Input: a DH simbolic row. Read the readme.md for more
+# information about the function format
+# output: a  homogeneous
+# transformation for the frame of joint i-1 to the frame
+# of the joint i. Each homogeneous transformation will be
+# a lambda-function that will receive all the current
+# joint values and evaluate the current transformation matrix
+# accordingly.
+def get_transformation(alpha, a, d, theta):
+    r = pi/180 # constant to convert degrees to radians
+    alpha_i = alpha*r
+    theta_i = theta*r
+    t = Matrix([
+        [cos(theta_i), -sin(theta_i)*cos(alpha_i), sin(theta_i)*sin(alpha_i), a*cos(theta_i)],
+        [sin(theta_i), cos(theta_i)*cos(alpha_i), -cos(theta_i)*sin(alpha_i), a*sin(theta_i)],
+        [0, sin(alpha_i), cos(alpha_i), d],
+        [0, 0, 0, 1],
+        ])
+    return t
 
 # Input: a DH simbolic matrix. Read the readme.md for more
 # information about the function format
@@ -375,6 +395,10 @@ def get_transformations(dh, variables):
             ])
         t_matrix_list.append(lambdify(variables, t, "numpy"))
     return t_matrix_list
+
+
+
+
 
 def diff_angle_base(v1,v2,base):
     direction = v1.cross(v2)

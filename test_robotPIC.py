@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d as plt3d
 from vpython import *
 from copy import copy
+from pic import robotLink, robotChain
 
 # create the symbolic variables that will represent
 # the joint angles
@@ -54,12 +55,6 @@ dh_right = Matrix([
     [90.0, 0, 0.3324, right_joint_vars[6]]
 ])
 
-# gripper = Matrix([
-    # [0, -1, 0, 0],
-    # [1, 0, 0, 0],
-    # [0, 0, 1, 0.1134],
-    # [0, 0, 0, 1]])
-
 ignore_tr = [1,0,0,0,0,0,0,0]
 # if the leght of "d" should come before the legth "a"
 # when rendering the robots
@@ -75,6 +70,12 @@ joint_range=np.array([
     [ 2.100e+02, 3.505e+02],
 ])
 
+#### Initialize the robot ######
+arm = robotChain(dh_left,left_joint_vars,joint_range, base_matrix=torso_l)
+arm.init_skeleton(home, d_first)
+exit()
+
+
 #get_robot_points
 # Start with the world transformation
 l_t_list = [lambdify(left_joint_vars,torso_l,'numpy')]
@@ -87,7 +88,6 @@ r_t_list += get_transformations(dh_right, right_joint_vars)
 # add gripper
 # l_t_list.append(lambdify(left_joint_vars,gripper,'numpy'))
 # r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
-
 l_arm_points = [[0,0,0]]
 r_arm_points = [[0,0,0]]
 
