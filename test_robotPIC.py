@@ -75,7 +75,6 @@ arm = robotChain(dh_left,left_joint_vars,joint_range, base_matrix=torso_l)
 arm.init_skeleton(home, d_first)
 exit()
 
-
 #get_robot_points
 # Start with the world transformation
 l_t_list = [lambdify(left_joint_vars,torso_l,'numpy')]

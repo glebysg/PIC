@@ -96,7 +96,7 @@ def is_constraint_intersection(joint_center, offset_matrix, constraint_index, ta
         # with the constraint
         if constraint_angle < target_angle:
             return False
-    return True
+    returnpTrue
 
 def get_projection(joint_center,offset_matrix, constraint_index, target, tolerance=0):
     # turn the points into vectors
@@ -258,6 +258,13 @@ def project_to_plane(normal,plane_point,point):
     y_proy = y + t*b
     z_proy = z + t*c
     return np.array([x_proy,y_proy,z_proy])
+
+def pt_project_to_plane(p1, p2, p3, p_point):
+    # get the normal
+    normal = np.cross(p2, p1)
+    # call project to plane
+    return project_to_normal(normal, p3, p_point)
+
 
 def get_line(p,q):
     # make the line not completely straight to get some

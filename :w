@@ -363,20 +363,12 @@ class robotChain:
     def forward(self):
         backward_points = self.backward_points[::-1]
         accum_rot = self.base_matrix
-        for i in range(len(self.rob_links)):
+        for i in range(len(self.points)-1):
             # Get the joint pos evaluated at the min, max, and zero
-            vals = self.joint_vals
-            vals[i] = self.rob_links[i].min_angle
-            joint_min = self.rob_links[i].eval_rot(vals)
-            vals[i] =  0
-            joint_zero = self.rob_links[i].eval_rot(vals)
-            vals[i] = self.rob_links[i].max_angle
-            joint_max = self.rob_links[i].eval_rot(vals)
-            # project the target to the plane created
-            # by the range of motion of the joint
-            pt_project_to_plane(joint_min, joint_zero, joint_max, self) 
-
-
+            # joint_min = 
+            # joint_zero = 
+            # joint_max = 
+            
             # reorient towards the backward chain
             new_orientation = normalize(backward_points[i+1]-self.points[i])
             self.chain[i].orientation = new_orientation
