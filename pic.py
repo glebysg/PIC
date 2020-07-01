@@ -63,6 +63,8 @@ class robotChain:
         self.rob_links = []
         # joint ranges
         self.ranges = ranges
+        # current joint angles
+        self.joint_vals = None
         # rotation matrix of the base
         if base_matrix is None:
             self.base_matrix = eye(4)
@@ -138,6 +140,8 @@ class robotChain:
         # Initialize the canvas
         scene.width = 1200
         scene.height = 800
+        # Initialize the joints
+        self.joint_vals = init_angles
         # create the robot links
         # accumulated matrix multiplication
         accum_rotations = copy.copy(self.base_matrix)
@@ -157,11 +161,10 @@ class robotChain:
             link = robotLink(*dh,min_angle,max_angle)
             link.rotation = lambda_rot
             # initialize the joint
-            link.joint_val=init_angles[i]
+            link.joint_val = init_angles
             ###############################################
             ###### create the IK elements to be drawn######
             ###############################################
-            print("INIT ANGLES:", init_angles)
             current_eval = link.eval_rot(init_angles)
             # draw the joint frames w.r.t the vpython frame
             link.frame = draw_reference_frame(prev_eval)
@@ -200,6 +203,7 @@ class robotChain:
             else:
                 print("IMPLEMENT 'a' distance before 'd'")
                 exit()
+            self.rob_links.append(link)
             prev_eval = copy.copy(current_eval)
             ###############################################
             ###### create the IK elements to be drawn######
@@ -211,7 +215,6 @@ class robotChain:
             self.graphic_constraints = []
             self.conic_constraints = conic_constraints
         # initialize the points
-        # TODO update the get points function
         self.points = self.get_points()
         ########### Create the visual constraints
         # if we are going to use conic constraints
@@ -244,9 +247,6 @@ class robotChain:
                                 opacity=0.5, color=color.white))
                     self.graphic_constraints.append(constraint_cluster)
                     prev_joint = current_joint
-        # add gripper
-        self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
-                axis=axis, color=color.green)
         ########### finish visual constraints
         # create task-based elements
         if self.render_task == "assembly":
@@ -354,13 +354,12 @@ class robotChain:
 
     # TODO redo get points
     def get_points(self):
-        points = [self.base]
-        previous_point = self.base
-        for i in range(len(self.chain)):
-            point = previous_point +\
-                normalize(self.chain[i].orientation)*self.chain[i].length
-            points.append(point)
-            previous_point = point
+        points = [self.base_matrix[0:3,3]]
+        accum_rot = self.base_matrix
+        for link in self.rob_links:
+            current_rot = link.rotation(*self.joint_vals)
+            accum_rot = np.dot(accum_rot, current_rot)
+            point = accum_rot[0:3,3]
         return points
 
     def forward(self):
