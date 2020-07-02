@@ -142,6 +142,7 @@ class robotChain:
         scene.height = 800
         # Initialize the joints
         self.joint_vals = init_angles
+        self.d_first = d_first
         # create the robot links
         # accumulated matrix multiplication
         accum_rotations = copy.copy(self.base_matrix)
@@ -179,7 +180,7 @@ class robotChain:
             # draw the joint
             link.v_joint = sphere(pos=pos,color=color.orange, radius = 4)
             # if the the "d" leght comes first in the robot
-            if d_first[i]:
+            if self.d_first[i]:
                 # draw d
                 if d_len > 0:
                     # get the z-1 axis of  w.r.t the origin
@@ -205,10 +206,11 @@ class robotChain:
                 exit()
             self.rob_links.append(link)
             prev_eval = copy.copy(current_eval)
-            ###############################################
-            ###### create the IK elements to be drawn######
-            ###############################################
+            ########### finish visual IK
 
+        ###############################################
+        ######   create the visual constraints   ######
+        ###############################################
         # Create the initial pose
         if self.pose_imitation:
             self.create_constraints(init_constraints)
@@ -326,17 +328,90 @@ class robotChain:
             self.graphic_constraints[index].pos = cone_pos
 
     def draw_chain(self):
-        axis = None
-        for index in range(len(self.chain)):
-            # Normalize the orientation of the ik link
-            pos = vec(*self.points[index])
-            axis = vec(*(normalize(self.chain[index].orientation)\
-                    *self.chain[index].length))
-            self.graphic_ik[index*2].pos = pos
-            self.graphic_ik[index*2+1].pos = pos
-            self.graphic_ik[index*2+1].axis = axis
-        self.gripper.pos = vec(*self.points[-1])
-        self.gripper.axis = axis
+        # last evaluated maxtix
+        prev_eval  = np.array(self.base_matrix).astype(np.float64)
+        arrow_size = 10
+        for i in range(len(self.joint_vals)):
+            link = self.rob_links[i]
+            current_eval = link.eval_rot(self.joint_vals)
+            # Reorient and move the reference Frame
+            frame_pos = vector(*((coppelia_pt_to_vpython(prev_eval[:,3])*100)))
+            v_frame = coppelia_frame_to_vpython(prev_eval)
+            link.frame[0].pos = frame_pos
+            link.frame[1].pos = frame_pos
+            link.frame[2].pos = frame_pos
+            link.frame[0].axis = norm(vector(*v_frame[0:3,0]))*arrow_size
+            link.frame[1].axis = norm(vector(*v_frame[0:3,1]))*arrow_size
+            link.frame[2].axis = norm(vector(*v_frame[0:3,2]))*arrow_size
+            # reorient and move the links
+            link.v_joint.pos = frame_pos
+            # if the the "d" leght comes first in the robot
+            if self.d_first[i]:
+                # update d
+                if d_len > 0:
+                    # get the z-1 axis of  w.r.t the origin
+                    d_orientation = vec(*v_frame[0:3,2])
+                    axis = norm(d_orientation)*float(link.d*100)
+                    link.v_d.pos = frame_pos
+                    link.v_d.axis = axis
+                # update a
+                if a_len > 0:
+                    # if we had d before
+                    if d_len > 0:
+                        # displace the position of the link
+                        frame_pos = frame_pos + axis
+                        link.v_elbow.pos = pos
+                    # get the x axis of  w.r.t the origin
+                    v_frame_current = coppelia_frame_to_vpython(current_eval)
+                    a_orientation = vec(*v_frame_current[0:3,0])
+                    axis= norm(a_orientation)*float(link.a*100)
+                    link.v_a.pos = frame_pos
+                    link.v_a.axis = axis
+            else:
+                print("IMPLEMENT 'a' distance before 'd'")
+                exit()
+            prev_eval = copy.copy(current_eval)
+
+            ###############################################
+            ###### create the IK elements to be drawn######
+            ###############################################
+            # draw the joint frames w.r.t the vpython frame
+            # get the previous and current evalulated rotation
+            # with respect to the vpython frame of reference
+            current_eval_vpython = coppelia_frame_to_vpython(current_eval)*100
+            prev_eval_vpython = coppelia_frame_to_vpython(prev_eval)*100
+            # get link origin and legth
+            pos = vec(*(prev_eval_vpython[0:3,3]))
+            # draw the joint
+            # if the the "d" leght comes first in the robot
+            if self.d_first[i]:
+                # draw d
+                if d_len > 0:
+                    # get the z-1 axis of  w.r.t the origin
+                    d_orientation = vec(*prev_eval_vpython[0:3,2])
+                    axis = norm(d_orientation)*float(d_len)
+                    link.v_d = cylinder(pos=pos, axis=axis,
+                            color=color.orange,radius=2)
+                # draw a
+                if a_len > 0:
+                    # if we had d before
+                    if d_len > 0:
+                        # displace the position of the link
+                        pos = pos + axis
+                        # draw a small sphere to make the joint looks smoother
+                        link.v_elbow =  sphere(pos=pos,color=color.orange, radius = 2)
+                    # get the x axis of  w.r.t the origin
+                    a_orientation = vec(*current_eval_vpython[0:3,0])
+                    axis= norm(a_orientation)*float(a_len)
+                    link.v_a = cylinder(pos=pos, axis=axis,
+                            color=color.orange,radius=2)
+            else:
+                print("IMPLEMENT 'a' distance before 'd'")
+                exit()
+            self.rob_links.append(link)
+            prev_eval = copy.copy(current_eval)
+            ########### finish visual IK
+
         if self.pose_imitation:
             if self.conic_constraints:
                 self.update_conic_constraints()
@@ -349,8 +424,6 @@ class robotChain:
             self.assembly_piece.pos=vec(*self.points[-1])+axis*self.assembly_piece.length/2
             # self.assembly_piece.pos=vec(*self.points[-1])+axis*math.sqrt(20)
             self.assembly_piece.axis=axis*self.assembly_piece.length
-        else:
-            self.gripper.size=vec(2,4,4)
 
     # TODO redo get points
     def get_points(self):
