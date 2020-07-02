@@ -124,8 +124,8 @@ for i in range(1,len(l_t_list)):
     # we are at the gripper
     else:
         # draw the current frame
-        draw_reference_frame(l_accum_t, transform=True)
-        draw_reference_frame(r_accum_t, transform=True)
+        # draw_reference_frame(l_accum_t, transform=True)
+        # draw_reference_frame(r_accum_t, transform=True)
         a_len = l_t_i[0,3]*100
         # get the cos(alpha) or sin alpha
         if l_t_i[1,2] != 0:
@@ -146,8 +146,8 @@ for i in range(1,len(l_t_list)):
         axis_r = 0
         # draw d
         if d_len > 0:
-            draw_reference_frame(l_prev_accum, transform=True)
-            draw_reference_frame(r_prev_accum, transform=True)
+            # draw_reference_frame(l_prev_accum, transform=True)
+            # draw_reference_frame(r_prev_accum, transform=True)
             # get the z-1 axis of  w.r.t the origin
             d_orientation_l = vec(*prev_cop_tr_l[0:3,2])
             d_orientation_r = vec(*prev_cop_tr_r[0:3,2])

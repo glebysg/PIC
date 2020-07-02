@@ -403,10 +403,6 @@ def get_transformations(dh, variables):
         t_matrix_list.append(lambdify(variables, t, "numpy"))
     return t_matrix_list
 
-
-
-
-
 def diff_angle_base(v1,v2,base):
     direction = v1.cross(v2)
     # if the direction is negative

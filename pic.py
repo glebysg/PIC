@@ -167,7 +167,7 @@ class robotChain:
             ###############################################
             current_eval = link.eval_rot(init_angles)
             # draw the joint frames w.r.t the vpython frame
-            link.frame = draw_reference_frame(prev_eval)
+            link.frame = draw_reference_frame(prev_eval,transform=True)
             # get the previous and current evalulated rotation
             # with respect to the vpython frame of reference
             current_eval_vpython = coppelia_frame_to_vpython(current_eval)*100
@@ -362,27 +362,36 @@ class robotChain:
 
     def forward(self):
         backward_points = self.backward_points[::-1]
-        accum_rot = self.base_matrix
+        prev_frame = self.base_matrix
         for i in range(len(self.rob_links)):
             # Get the joint pos evaluated at the min, max, and zero
+            link = self.rob_links[i]
             vals = self.joint_vals
-            vals[i] = self.rob_links[i].min_angle
-            joint_min = self.rob_links[i].eval_rot(vals)
+            vals[i] = link.min_angle
+            joint_min = link.eval_rot(vals)
             vals[i] =  0
-            joint_zero = self.rob_links[i].eval_rot(vals)
-            vals[i] = self.rob_links[i].max_angle
-            joint_max = self.rob_links[i].eval_rot(vals)
+            joint_zero = link.eval_rot(vals)
+            vals[i] = link.max_angle
+            joint_max = link.eval_rot(vals)
             # project the target to the plane created
             # by the range of motion of the joint
-            pt_project_to_plane(joint_min, joint_zero, joint_max, self) 
-
-
-            # reorient towards the backward chain
-            new_orientation = normalize(backward_points[i+1]-self.points[i])
-            self.chain[i].orientation = new_orientation
-            # change the position of the point at the
-            # end of the link
-            self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
+            p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], backward_points[i+1])
+            # add the d distance to the rotation frame
+            rot_frame = prev_frame[0:3,3] + np.array([0,0,rob_links[i].d])
+            p_zero = joint_zero[0:3,3]- rot_frame
+            p_target = p_target - rot_frame
+            # get the angle between the neutral joint pos (joint val=0) and the current pos
+            diff_angle = diff_angle_base(p_zero, p_target, prev_frame[0:3,2])
+            # if is greater than the max, make the max
+            if (diff_angle > link.max_angle):
+                diff_angle = link.max_angle
+            # if is smaller than the min, make the min.
+            elif (diff_angle < link.min_angle):
+                diff_angle = link.min_angle
+            # update the joint values
+            self.joint_vals[i] = diff_angle
+            # evaluate the rotation
+            prev_frame = link.eval_rot(self.joint_vals)
 
     def backward(self):
         target_point = self.target.copy()
@@ -394,7 +403,7 @@ class robotChain:
             target_point = backward_point
         self.backward_points = backward_points
 
-    def py_forward(self):
+    def pic_forward(self):
         backward_points = self.backward_points[::-1]
         # tuples of joint index where the constraint is, type of comnstraint
         human_joints = [(constr[0], constr[2]) for constr in self.pose_constraints]
@@ -450,7 +459,7 @@ class robotChain:
             self.chain[i].orientation = new_orientation
             self.points[i+1] = self.points[i] + new_orientation*self.chain[i].length
 
-    def py_backward(self):
+    def pic_backward(self):
         target = self.target.copy()
         backward_points = [target]
         # if the constraint is going out of the cube
@@ -540,8 +549,8 @@ class robotChain:
             count = 0
             while error > self.tolerance:
                 if self.pose_imitation:
-                    self.py_backward()
-                    self.py_forward()
+                    self.pic_backward()
+                    self.pic_forward()
                 else:
                     self.backward()
                     self.forward()
