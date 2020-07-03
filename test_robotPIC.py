@@ -6,6 +6,188 @@ import mpl_toolkits.mplot3d as plt3d
 from vpython import *
 from copy import copy
 from pic import robotLink, robotChain
+from copy import deepcopy
+from datetime import timedelta
+from PIL import Image
+from time import sleep
+from scipy import integrate
+import os
+import argparse
+import sys
+from os import path
+import json
+########## PARAMS ##############
+# IMPORTANT: the distance units are in
+# centimeters for rendering purposes
+
+# example call:
+# python incision_task.py -s 3 -t incision_curvy -v 1 -r Baxter -o ./data/results/incision_straight.txt
+
+##############################
+###     PARSE ARGS         ###
+##############################
+iterations = 20
+parser = argparse.ArgumentParser()
+parser.add_argument('-s', action="store", dest="soften", default=3,
+        type=int, help="degree of softening for the imitation algorithm,\
+                the valiues can go from 1 to 3")
+parser.add_argument('-w', action="store", dest="sleep_time", default=0.02,
+        type=float, help="waiting time between datapoint updates ")
+parser.add_argument('-p', action="store", dest="pose_threshold", default=0.2,
+        type=float, help="Percentage of the angle range that will be use to determine if the pose is acccurate")
+parser.add_argument('-t', action="store", dest="task", default='incision_straight',
+        help="name of the task to execute, example 'incision_straight'")
+parser.add_argument('-v', action="store", dest="data_version",
+        default="3", help="version of the task that is executed (a number)")
+parser.add_argument('-r', action="store", dest="robot",
+        default="baxter", help="Robot to use in the task. The options are Baxter or Yumi")
+parser.add_argument('-d', action="store", dest="data_path", default="./data/new/",
+        help="Path location of the skel files")
+parser.add_argument('-c', action="store", dest="config_path", default="./simulation/arms/",
+        help="Path location of the config files")
+parser.add_argument('-a', action="store", dest="annotation_path", default="./simulation/data_points/",
+        help="Path location of the annotated datapoint files")
+parser.add_argument('-o', action="store", dest="output_path", default="./data/results/",
+        help="Path location of the output result files")
+parser.add_argument('-f', action="store", dest="filter", default="exp",
+        help="type of filterered data to use. Options: exp, kalman, double")
+parser.add_argument('--pose_imitation',action="store_true", default=False,
+        help="if present, it uses the pose imitation Algorithm")
+parser.add_argument('--conic_constraints',action="store_true", default=False,
+        help="if present, it uses the pose imitation with conic constraints")
+parser.add_argument('--append',action="store_true", default=False,
+        help="if present, append to the file instead of rewriting it")
+parser.add_argument('--filtering',action="store_true", default=False,
+        help="if present, it smoothens the movements through filtering")
+parser.add_argument('--threshold', action="store", dest="filtering_threshold", default=10,
+        type=int, help="threshold of change in degrees \
+                at whitch the robot movement is fitered")
+args = parser.parse_args()
+soften = args.soften
+sleep_time = args.sleep_time
+pose_threshold = args.pose_threshold
+robot = args.robot
+data_version = args.data_version
+task = args.task
+pose_imitation = args.pose_imitation
+filtering = args.filtering
+filter_threshold = args.filtering_threshold
+file_append = args.append
+smoothing = "smooth_"
+if args.filter == 'kalman' or args.filter == 'double':
+    smoothing = args.filter + "_" + smoothing
+skel_path = args.data_path+smoothing+task+data_version+'_skel.txt'
+ts_path = args.data_path+task+'_skelts.txt'
+task_path = args.annotation_path+task+'_'+data_version+'.txt'
+pad_path  = "./simulation/textures/pad.jpg"
+arm_path = args.config_path+robot+'.txt'
+robot_config_path = args.config_path+robot+'_config_'\
+        +task+data_version+'.json'
+print(task_path)
+print(robot_config_path)
+task_datapoints = np.loadtxt(task_path, delimiter=' ')
+out_file = path.join(args.output_path,task+data_version+"_"+robot+"_")
+
+###############################
+# read robot config
+config_reader = open(robot_config_path)
+robot_config = json.load(config_reader)
+base = robot_config["base"]
+human_joint_index = robot_config["human_joint"]
+init_constraints = robot_config["constraints"]
+# Use conic constraints only when presnet in the config an indicated
+# through the arguments
+if args.conic_constraints and "conic_constraints" in robot_config:
+    conic_constraints = robot_config["conic_constraints"]
+    print("CONIC CONSTRAINTS, ", conic_constraints)
+else:
+    conic_constraints = None
+scale = robot_config["scale"]
+task_arm = robot_config["arm"]
+pad_offset = vec(*robot_config["pad_offset"])
+pad_axis = vec(*robot_config["pad_axis"])
+pad_dim = robot_config["pad_dim"]
+
+# get the algorigthm name for the robot file
+if args.conic_constraints and "conic_constraints" in robot_config:
+    algorithm = 'posecones'
+elif pose_imitation:
+    algorithm = 'poseimit'
+    algorithm += str(soften)
+else:
+    algorithm = 'fabrik'
+out_file += algorithm+".txt"
+
+################## scene setup ################################
+scene = canvas(title='Pose imitation experiments', width=1200, height=800)
+draw_vpython_reference_frame(0,0,0,arrow_size=10)
+
+################### incision/assembly pad  ######################
+pad_points = []
+length = pad_dim[0]*scale
+height = pad_dim[1]*scale
+width = pad_dim[2]*scale
+if task == "assembly":
+    # occlussion calculation pad
+    pad = box(pos=pad_offset, length=length, height=height, width=width,
+            axis=pad_axis,  opacity=0.5, color=color.white)
+    pad.visible = False
+    # create the two pieces of assembly
+    # width=width, texture={'file': pad_path, place:['right']})
+else:
+    # surgical pad
+    pad = box(pos=pad_offset, length=length, height=height,
+            width=width, texture=pad_path)
+
+####### Get pad plane ##########
+# if the occlussion/pad is in the x-z plane
+if np.argmax(pad_axis.value) == 0:
+    pad_points.append((pad.pos+vec(-length, height, -width)/2).value)
+    pad_points.append((pad.pos+vec(-length, height, width)/2).value)
+    pad_points.append((pad.pos+vec(length, height, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = length
+    pad_orth = width
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 0
+    pad_y_index = 2
+# if the occlussion/pad is in the z-y plane
+elif np.argmax(pad_axis.value) == np.argmin(pad_dim):
+    pad_points.append((pad.pos+vec(height, -length, -width)/2).value)
+    pad_points.append((pad.pos+vec(height, length, -width)/2).value)
+    pad_points.append((pad.pos+vec(height, length, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = length
+    pad_orth = width
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 1
+    pad_y_index = 2
+# if the occlussion/pad is in the x-y plane
+else:
+    pad_points.append((pad.pos+vec(-height, -length, width)/2).value)
+    pad_points.append((pad.pos+vec(-height, length, width)/2).value)
+    pad_points.append((pad.pos+vec(height, length, width)/2).value)
+    pad_points = np.array(pad_points)
+    pad_normal = get_plane_normal(pad_points)
+    # get the dimentions of the pad that are alinged with the robot's
+    # corrdinate system
+    pad_proj = height
+    pad_orth = length
+    # get the coordinate systems indexes that match the pads x,y
+    # coordinate system
+    pad_x_index = 0
+    pad_y_index = 1
+print(pad_points[0])
+
+########### Create the robot #######################
 
 # create the symbolic variables that will represent
 # the joint angles
@@ -70,201 +252,107 @@ joint_range=np.array([
     [ 2.100e+02, 3.505e+02],
 ])
 
+# TODO add this info to the new config files
+human_joint_index = [0,3,6]
+# Define arm joints
+left_h_joints = [4,5,6]
+right_h_joints = [8,9,10]
+
 #### Initialize the robot ######
-arm = robotChain(dh_left,left_joint_vars,joint_range, base_matrix=torso_l)
-arm.init_skeleton(home, d_first)
-exit()
+arm_l = robotChain(dh_params=dh_left,joint_vars=left_joint_vars,ranges=joint_range,
+        base_matrix=torso_l, pose_imitation=pose_imitation,
+        human_joint_index=human_joint_index,
+        iterations=iterations, soften=soften, filtering=filtering,
+        filter_threshold=filter_threshold,
+        render_task=task, render_scale=scale)
+arm_l.init_skeleton(home, d_first)
+arm_r = robotChain(dh_params=dh_right,joint_vars=right_joint_vars,ranges=joint_range,
+        base_matrix=torso_r, pose_imitation=pose_imitation,
+        human_joint_index=human_joint_index,
+        iterations=iterations, soften=soften, filtering=filtering,
+        filter_threshold=filter_threshold,
+        render_task=task, render_scale=scale)
+arm_r.init_skeleton(home, d_first)
 
-#get_robot_points
-# Start with the world transformation
-l_t_list = [lambdify(left_joint_vars,torso_l,'numpy')]
-r_t_list = [lambdify(right_joint_vars,torso_r,'numpy')]
-# add dh transformations
-l_t_list += get_transformations(dh_left, left_joint_vars)
-r_t_list += get_transformations(dh_right, right_joint_vars)
-# l_t_list = get_transformations(dh_left, left_joint_vars)
-# r_t_list = get_transformations(dh_right, right_joint_vars)
-# add gripper
-# l_t_list.append(lambdify(left_joint_vars,gripper,'numpy'))
-# r_t_list.append(lambdify(right_joint_vars,gripper,'numpy'))
-l_arm_points = [[0,0,0]]
-r_arm_points = [[0,0,0]]
+#######################################################
+direction = None
+human_l_chain = []
+human_r_chain = []
+skel_reader = open(skel_path, 'r')
+line_counter = 0
+rate(30)
+task_metrics = []
 
-# initialize the accum transformation matrix with
-# the first evaluated matrix
-l_accum_t = l_t_list[0](*pose)
-r_accum_t = r_t_list[0](*pose)
-l_prev_accum = np.copy(l_accum_t)
-r_prev_accum = np.copy(r_accum_t)
-
-dh_index = 1
-for i in range(1,len(l_t_list)):
-    l_t_i = l_t_list[i](*pose)
-    r_t_i = r_t_list[i](*pose)
-    l_accum_t = np.dot(l_accum_t, l_t_i)
-    r_accum_t = np.dot(r_accum_t, r_t_i)
-    # draw the frames from the perspective of the coopelia frame
-    draw_reference_frame(l_prev_accum, transform=True)
-    draw_reference_frame(r_prev_accum, transform=True)
-    # get pos
-    l_arm_points.append(l_accum_t[0:3,3])
-    r_arm_points.append(r_accum_t[0:3,3])
-    # get the coopelia frame
-    prev_cop_tr_l = coppelia_frame_to_vpython(l_prev_accum)*100
-    prev_cop_tr_r = coppelia_frame_to_vpython(r_prev_accum)*100
-    cop_tr_l = coppelia_frame_to_vpython(l_accum_t)*100
-    cop_tr_r = coppelia_frame_to_vpython(r_accum_t)*100
-    # get base pos
-    pos_l = vec(*(prev_cop_tr_l[0:3,3]))
-    pos_r = vec(*(prev_cop_tr_r[0:3,3]))
-    # At any joint but the gripper
-    if (i-dh_index)<dh_left.shape[0]:
-        a_len = dh_left[i-dh_index,1]*100
-        d_len = dh_left[i-dh_index,2]*100
-    # we are at the gripper
-    else:
-        # draw the current frame
-        # draw_reference_frame(l_accum_t, transform=True)
-        # draw_reference_frame(r_accum_t, transform=True)
-        a_len = l_t_i[0,3]*100
-        # get the cos(alpha) or sin alpha
-        if l_t_i[1,2] != 0:
-            d_len = (l_t_i[1,3]/l_t_i[1,2])*100
-        elif l_t_i[2,2] !=0:
-            d_len = (l_t_i[2,3]/l_t_i[2,2])*100
+for current_point, current_arm in zip(task_datapoints, task_arm):
+    print ("CURRENT ARM", current_arm)
+    # Read lines until you get to the line that you want
+    init_point = current_point[0]
+    end_point = current_point[1]
+    mse_list = []
+    angles = []
+    human_angles = []
+    distances = []
+    h_occlussions = []
+    r_occlussions = []
+    while line_counter < end_point:
+        data_point = np.array(skel_reader.readline().split(), dtype=float)
+        line_counter += 1
+        if line_counter < init_point:
+            continue
+        sleep(sleep_time)
+        human_l = []
+        human_r = []
+        for l_index, r_index in zip(left_h_joints, right_h_joints):
+            human_l.append([-data_point[l_index*3],
+                    data_point[l_index*3+1],
+                    -data_point[l_index*3+2]])
+            human_r.append([-data_point[r_index*3],
+                    data_point[r_index*3+1],
+                    -data_point[r_index*3+2]])
+        human_l = np.array(human_l)*100
+        human_r = np.array(human_r)*100
+        # get the human arms offset by scale and offset
+        l_base = coppelia_pt_to_vpython(np.array(arm_l.base_matrix).astype(np.float64)[:,3]*100)/scale
+        r_base = coppelia_pt_to_vpython(np.array(arm_r.base_matrix).astype(np.float64)[:,3]*100)/scale
+        offset_human_l = [get_offset_point(p, np.subtract(l_base,human_l[0]), scale) for p in human_l]
+        offset_human_r = [get_offset_point(p, np.subtract(r_base,human_r[0]), scale) for p in human_r]
+        # clear the previous elements
+        for elem_l, elem_r in zip(human_l_chain,human_r_chain):
+            elem_l.visible = False
+            elem_r.visible = False
+        human_l_chain.clear()
+        human_r_chain.clear()
+        del human_l_chain[:]
+        del human_r_chain[:]
+        # draw a new element
+        human_l_chain = draw_debug(offset_human_l, color.purple,opacity=0.6)
+        human_r_chain = draw_debug(offset_human_r, color.purple,opacity=0.6)
+        # Get the pose of the new element
+        l_constraints =[]
+        r_constraints =[]
+        for joint_index in range(len(human_l)-1):
+            # get the "out" constraint
+            out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],arm_l.get_base_offsets())
+            out_r_const = get_constraint(human_r[joint_index],human_r[joint_index+1],arm_r.get_base_offsets())
+            # get the "in" constraint
+            in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],arm_l.get_base_offsets())
+            in_r_const = get_constraint(human_r[joint_index+1],human_r[joint_index],arm_r.get_base_offsets())
+            # append to the constraint list
+            l_constraints.append(out_l_const +1)
+            l_constraints.append(in_l_const +1)
+            r_constraints.append(out_r_const +1)
+            r_constraints.append(in_r_const +1)
+        arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
+        arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
+        # print(human_r_chain[-1].po)
+        # Get distannce with target
+        human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
+        human_target_r = human_r_chain[-1].pos + human_r_chain[-1].axis
+        mse_l = (np.square((arm_l.get_gripper_pos() - human_target_l).value)).mean(axis=None)
+        mse_r = (np.square((arm_r.get_gripper_pos() - human_target_r).value)).mean(axis=None)
+        if current_arm == 'left':
+            mse_list.append([mse_l])
+        elif current_arm == 'right':
+            mse_list.append([mse_r])
         else:
-            d_len = 0
-        print("gripper a len:", a_len)
-        print("gripper d len:", d_len)
-    # move everything
-    # draw the joint
-    joint_l =  sphere(pos=pos_l,color=color.yellow, radius = 4)
-    joint_r =  sphere(pos=pos_r,color=color.orange, radius = 4)
-    # if the the "d" leght comes first in the robot
-    if d_first[i-dh_index]:
-        axis_l = 0
-        axis_r = 0
-        # draw d
-        if d_len > 0:
-            # draw_reference_frame(l_prev_accum, transform=True)
-            # draw_reference_frame(r_prev_accum, transform=True)
-            # get the z-1 axis of  w.r.t the origin
-            d_orientation_l = vec(*prev_cop_tr_l[0:3,2])
-            d_orientation_r = vec(*prev_cop_tr_r[0:3,2])
-            axis_l= norm(d_orientation_l)*float(d_len)
-            axis_r= norm(d_orientation_r)*float(d_len)
-            d_link_l = cylinder(pos=pos_l, axis=axis_l,
-                    color=color.yellow,radius=2)
-            d_link_r = cylinder(pos=pos_r, axis=axis_r,
-                    color=color.orange,radius=2)
-        # draw a
-        if a_len > 0:
-            if d_len > 0:
-                # draw a small sphere to make the joint looks smoother
-                pos_l = pos_l + axis_l
-                pos_r = pos_r + axis_r
-                joint_l =  sphere(pos=pos_l,color=color.yellow, radius = 2)
-                joint_r =  sphere(pos=pos_r,color=color.orange, radius = 2)
-            # get the x axis of  w.r.t the origin
-            d_orientation_l = vec(*cop_tr_l[0:3,0])
-            d_orientation_r = vec(*cop_tr_r[0:3,0])
-            axis_l= norm(d_orientation_l)*float(a_len)
-            axis_r= norm(d_orientation_r)*float(a_len)
-            a_link_l = cylinder(pos=pos_l, axis=axis_l,
-                    color=color.yellow,radius=2)
-            a_link_r = cylinder(pos=pos_r, axis=axis_r,
-                    color=color.orange,radius=2)
-    else:
-        print("IMPLEMENT 'a' distance before 'd'")
-        exit()
-    l_prev_accum = np.copy(l_accum_t)
-    r_prev_accum = np.copy(r_accum_t)
-
-l_arm_points = np.array(l_arm_points)
-r_arm_points = np.array(r_arm_points)
-fig = plt.figure()
-ax = fig.add_subplot(111, projection='3d')
-
-# ax.scatter(l_arm_points[1:,0], l_arm_points[1:,1], l_arm_points[1:,2], marker='^')
-# ax.scatter(r_arm_points[1:,0], r_arm_points[1:,1], r_arm_points[1:,2], marker='^')
-
-# LEFT POSITIONS
-left_pos = np.array([
-[0.063803821802139, 0.25905722379684, 0.17630106210709],
-[0.112593986094   , 0.30784836411476, 0.44664913415909],
-[0.18471896648407 , 0.37997275590897, 0.44660693407059],
-[0.37026315927505 , 0.56551533937454, 0.37752240896225],
-[0.44351378083229 , 0.63876533508301, 0.37747138738632],
-[0.63492566347122 , 0.83017534017563, 0.36735194921494],
-[0.71693193912506 , 0.91218090057373, 0.36728006601334]])
-# y_l = -left_pos[:,1]
-# left_pos[:,1]=left_pos[:,2]
-# left_pos[:,2]=y_l
-# RIGHT POSITIONS
-right_pos = np.array([
-[0.064155280590057, -0.25897043943405, 0.17630106210709],
-[0.11295724660158 , -0.30777248740196, 0.44664055109024],
-[0.18507945537567 , -0.37989434599876, 0.44661432504654],
-[0.37062647938728 , -0.56544142961502, 0.37754958868027],
-[0.44387751817703 , -0.63869214057922, 0.37752658128738],
-[0.63528883457184 , -0.83010226488113, 0.36741954088211],
-[0.71729582548141 , -0.91210895776749, 0.36738532781601]])
-
-
-# y_r = -right_pos[:,1]
-# right_pos[:,1]=right_pos[:,2]
-# right_pos[:,2]=y_r
-# left_pos = left_pos*100
-# right_pos = right_pos*100
-# draw the lines
-# for i in range(0,len(l_arm_points)):
-    # # Left
-    # l_line_x = [l_arm_points[i-1][0], l_arm_points[i][0]]
-    # l_line_y = [l_arm_points[i-1][1], l_arm_points[i][1]]
-    # l_line_z = [l_arm_points[i-1][2], l_arm_points[i][2]]
-    # l_line = plt3d.art3d.Line3D(l_line_x, l_line_y, l_line_z)
-    # ax.add_line(l_line)
-    # # right
-    # r_line_x = [r_arm_points[i-1][0], r_arm_points[i][0]]
-    # r_line_y = [r_arm_points[i-1][1], r_arm_points[i][1]]
-    # r_line_z = [r_arm_points[i-1][2], r_arm_points[i][2]]
-    # r_line = plt3d.art3d.Line3D(r_line_x, r_line_y, r_line_z)
-    # ax.add_line(r_line)
-    # ax.auto_scale_xyz
-# plt.show()
-
-# y_l = -l_arm_points[:,1]
-# y_r = -r_arm_points[:,1]
-# r_arm_points[:,1]=r_arm_points[:,2]
-# l_arm_points[:,1]=l_arm_points[:,2]
-# r_arm_points[:,2]=y_r
-# l_arm_points[:,2]=y_l
-coppelia_left_arm = []
-coppelia_right_arm = []
-row,col=l_arm_points.shape
-
-for i in range(row):
-    h_left = np.append(l_arm_points[i,:],1)
-    h_right = np.append(r_arm_points[i,:],1)
-    coppelia_left_arm.append(coppelia_pt_to_vpython(h_left))
-    coppelia_right_arm.append(coppelia_pt_to_vpython(h_right))
-coppelia_left_arm = np.array(coppelia_left_arm)
-coppelia_right_arm = np.array(coppelia_right_arm)
-
-coppelia_left_points = []
-coppelia_right_points = []
-row,col=left_pos.shape
-for i in range(row):
-    h_left = np.append(left_pos[i,:],1)
-    h_right = np.append(right_pos[i,:],1)
-    coppelia_left_points.append(coppelia_pt_to_vpython(h_left))
-    coppelia_right_points.append(coppelia_pt_to_vpython(h_right))
-coppelia_left_points = np.array(coppelia_left_points)
-coppelia_right_points = np.array(coppelia_right_points)
-
-draw_coppelia_reference_frame(0,0,0,arrow_size=10)
-# draw_debug(coppelia_left_points*100,color.blue)
-# draw_debug(coppelia_right_points*100,color.blue)
-# draw_debug(coppelia_left_arm[1:]*100,color.yellow)
-# draw_debug(coppelia_right_arm[1:]*100,color.orange)
-rate(100)
+            mse_list.append([mse_r,mse_l])

@@ -70,6 +70,7 @@ class robotChain:
             self.base_matrix = eye(4)
         else:
             self.base_matrix = base_matrix
+        self.base = np.array(self.base_matrix).astype(np.float64)[0:3,3]
         self.base_rot = lambdify(self.joint_vars,self.base_matrix,'numpy')
         # error tolerance
         self.tolerance = tolerance
@@ -138,8 +139,8 @@ class robotChain:
             raise ValueError('the parameter init_constraints cannot \
                        be empty when using pose imitation')
         # Initialize the canvas
-        scene.width = 1200
-        scene.height = 800
+        # scene.width = 1200
+        # scene.height = 800
         # Initialize the joints
         self.joint_vals = init_angles
         self.d_first = d_first
@@ -169,6 +170,9 @@ class robotChain:
             current_eval = link.eval_rot(init_angles)
             # draw the joint frames w.r.t the vpython frame
             link.frame = draw_reference_frame(prev_eval,transform=True)
+            # if we are at the gripper
+            if (i ==  len(init_angles) -1):
+                self.gripper_frame = draw_reference_frame(current_eval,transform=True)
             # get the previous and current evalulated rotation
             # with respect to the vpython frame of reference
             current_eval_vpython = coppelia_frame_to_vpython(current_eval)*100
@@ -345,6 +349,15 @@ class robotChain:
             link.frame[2].axis = norm(vector(*v_frame[0:3,2]))*arrow_size
             # reorient and move the links
             link.v_joint.pos = frame_pos
+            if (i ==  len(init_angles) -1):
+                gripper_pos = vector(*((coppelia_pt_to_vpython(prev_eval[:,3])*100)))
+                gripper_frame = coppelia_frame_to_vpython(prev_eval)
+                self.gripper_frame[0].pos = gripper_pos
+                self.gripper_frame[1].pos = gripper_pos
+                self.gripper_frame[2].pos = gripper_pos
+                self.gripper_frame[0].axis = norm(vector(*gripper_frame[0:3,0]))*arrow_size
+                self.gripper_frame[1].axis = norm(vector(*gripper_frame[0:3,1]))*arrow_size
+                self.gripper_frame[2].axis = norm(vector(*gripper_frame[0:3,2]))*arrow_size
             # if the the "d" leght comes first in the robot
             if self.d_first[i]:
                 # update d
@@ -425,7 +438,10 @@ class robotChain:
             # self.assembly_piece.pos=vec(*self.points[-1])+axis*math.sqrt(20)
             self.assembly_piece.axis=axis*self.assembly_piece.length
 
-    # TODO redo get points
+    def get_gripper_pos(self):
+        last_rot = self.rob_links[1].eval_rot(self.joint_vals)
+        return vector(*last_rot[0:3,3])
+
     def get_points(self):
         points = [self.base_matrix[0:3,3]]
         for link in self.rob_links:
@@ -604,15 +620,7 @@ class robotChain:
         # Check if the point is reachable
         self.target = np.array(target, dtype=float)
         distance_to_target = np.linalg.norm(self.target-self.base)
-        # if the target is not reachable
-        if (sum([l.length for l in self.chain]) < distance_to_target)\
-           and not self.pose_imitation:
-            # Get goal orientation
-            goal_orientation = self.target-self.base
-            for i in range(len(self.chain)):
-                self.chain[i].orientation = goal_orientation
-            self.points = self.get_points()
-        else:
+        if (sum([l.length for l in self.rob_links]) > distance_to_target):
             # initialize the points
             self.points = self.get_points()
             if self.filtering:
@@ -659,9 +667,10 @@ class robotChain:
                     if count > self.iterations:
                             break
                     count += 1
-        self.gripper.pos = vec(*self.points[-1])
-        self.draw_chain()
 
+            self.draw_chain()
+        else:
+            print("Not reachable")
     def animate(self):
         rate(100)
         # if the mouse is being dragged
@@ -669,6 +678,8 @@ class robotChain:
             # Animate the solved ik chain
             self.draw_chain()
 
+
+# TODO change to the appropriate function
 # Helper function for reading arms
 # create ik chain from file
 # the file must be in the following format:
@@ -685,8 +696,4 @@ def read_arm(path):
         right_chain.append(ikLink(length=link[4],orientation=link[5:8]))
     return left_chain, right_chain
 
-def create_arm():
-    chain = []
-    for link in links:
-        # Get orientation of the link
-        pass
+
