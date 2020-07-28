@@ -443,15 +443,17 @@ class robotChain:
         return vector(*last_rot[0:3,3])
 
     def get_points(self):
-        points = [self.base_matrix[0:3,3]]
+        points = [self.base]
         for link in self.rob_links:
             current_rot = link.eval_rot(self.joint_vals)
             point = current_rot[0:3,3]
-        return points
+            points.append(point)
+        return np.array(points)
 
     def forward(self):
         backward_points = self.backward_points[::-1]
-        prev_frame = self.base_matrix
+        prev_frame = np.array(self.base_matrix).astype(np.float64)
+        print(len(backward_points))
         for i in range(len(self.rob_links)):
             # Get the joint pos evaluated at the min, max, and zero
             link = self.rob_links[i]

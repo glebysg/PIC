@@ -11,8 +11,14 @@ def normalize(vector):
     return np.array(vector,dtype=float)/np.linalg.norm(vector)
 
 def distance(vector1, vector2):
-    if type(vector1).__name__ == 'vector':
+    if type(vector1).__name__ == 'vector' and type(vector2).__name__ == 'vector':
         return np.linalg.norm(np.array((vector1-vector2).value))
+    # transform the vector 2 to vector
+    elif type(vector1).__name__ == 'vector':
+        return np.linalg.norm(vector1.value-vector2)
+    # transform the vector 1 to vector
+    elif type(vector2).__name__ == 'vector':
+        return np.linalg.norm(vector1-vector2.value)
     else:
         return np.linalg.norm(vector1-vector2)
 
@@ -32,6 +38,17 @@ def coppelia_pt_to_vpython(coppelia_pt):
         ])
     # Remove the homogeneous coordinate element from the vector
     return np.dot(rot,coppelia_pt)[:-1]
+
+
+def vpython_pt_to_coppelia(vpython_pt):
+    rot = np.array([
+        [0,0,1,0],
+        [1,0,0,0],
+        [0,1,0,0],
+        [0,0,0,1]
+        ])
+    # Remove the homogeneous coordinate element from the vector
+    return np.dot(rot,vpython_pt)[:-1]
 
 def coppelia_frame_to_vpython(coppelia_frame):
     rot = np.array([

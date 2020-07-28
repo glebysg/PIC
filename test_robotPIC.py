@@ -195,8 +195,8 @@ left_joint_names = ("lt1, lt2, lt3, lt4, lt5, lt6, lt7")
 right_joint_names = ("rt1, rt2, rt3, rt4, rt5, rt6, rt7")
 left_joint_vars = symbols(left_joint_names)
 right_joint_vars = symbols(right_joint_names)
-neutral = (0,-31,0,43,0,72,0)
-home=(0,0,0,0,0,0,0)
+neutral = [0,-31,0,43,0,72,0]
+home=[0,0,0,0,0,0,0]
 pose = neutral
 
 # Define the DH parameter matrix for the Baxter
@@ -342,8 +342,11 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             l_constraints.append(in_l_const +1)
             r_constraints.append(out_r_const +1)
             r_constraints.append(in_r_const +1)
-        arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
-        arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
+        # change the target to the coppelia world
+        l_target = vpython_pt_to_coppelia(np.append(offset_human_l[-1],1))/100
+        r_target = vpython_pt_to_coppelia(np.append(offset_human_r[-1],1))/100
+        arm_l.solve(l_target, l_constraints, offset_human_l)
+        arm_r.solve(r_target, r_constraints, offset_human_r)
         # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
