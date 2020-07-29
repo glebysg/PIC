@@ -151,7 +151,7 @@ class robotChain:
         prev_eval  = np.array(self.base_matrix).astype(np.float64)
         # from the first joint to the gripper
         # The rotation at zero is the base origin rotation
-        for i in range(len(init_angles)):
+        for i in range(len(self.joint_vals)):
             # Initialize a new link
             dh =  self.dh_params.row(i)
             min_angle = self.ranges[i,0]
@@ -162,8 +162,6 @@ class robotChain:
             lambda_rot = lambdify(self.joint_vars, accum_rotations, "numpy")
             link = robotLink(*dh,min_angle,max_angle)
             link.rotation = lambda_rot
-            # initialize the joint
-            link.joint_val = init_angles
             ###############################################
             ###### create the IK elements to be drawn######
             ###############################################
@@ -179,8 +177,8 @@ class robotChain:
             prev_eval_vpython = coppelia_frame_to_vpython(prev_eval)*100
             # get link origin and legth
             pos = vec(*(prev_eval_vpython[0:3,3]))
-            a_len = link.a*100
-            d_len = link.d*100
+            a_len = float(link.a*100)
+            d_len = float(link.d*100)
             # draw the joint
             link.v_joint = sphere(pos=pos,color=color.orange, radius = 4)
             # if the the "d" leght comes first in the robot
@@ -349,7 +347,7 @@ class robotChain:
             link.frame[2].axis = norm(vector(*v_frame[0:3,2]))*arrow_size
             # reorient and move the links
             link.v_joint.pos = frame_pos
-            if (i ==  len(init_angles) -1):
+            if (i ==  len(self.joint_vals) -1):
                 gripper_pos = vector(*((coppelia_pt_to_vpython(prev_eval[:,3])*100)))
                 gripper_frame = coppelia_frame_to_vpython(prev_eval)
                 self.gripper_frame[0].pos = gripper_pos
@@ -361,19 +359,19 @@ class robotChain:
             # if the the "d" leght comes first in the robot
             if self.d_first[i]:
                 # update d
-                if d_len > 0:
+                if link.d > 0:
                     # get the z-1 axis of  w.r.t the origin
                     d_orientation = vec(*v_frame[0:3,2])
                     axis = norm(d_orientation)*float(link.d*100)
                     link.v_d.pos = frame_pos
                     link.v_d.axis = axis
                 # update a
-                if a_len > 0:
+                if link.a > 0:
                     # if we had d before
-                    if d_len > 0:
+                    if link.d > 0:
                         # displace the position of the link
                         frame_pos = frame_pos + axis
-                        link.v_elbow.pos = pos
+                        link.v_elbow.pos = frame_pos
                     # get the x axis of  w.r.t the origin
                     v_frame_current = coppelia_frame_to_vpython(current_eval)
                     a_orientation = vec(*v_frame_current[0:3,0])
@@ -384,46 +382,6 @@ class robotChain:
                 print("IMPLEMENT 'a' distance before 'd'")
                 exit()
             prev_eval = copy.copy(current_eval)
-
-            ###############################################
-            ###### create the IK elements to be drawn######
-            ###############################################
-            # draw the joint frames w.r.t the vpython frame
-            # get the previous and current evalulated rotation
-            # with respect to the vpython frame of reference
-            current_eval_vpython = coppelia_frame_to_vpython(current_eval)*100
-            prev_eval_vpython = coppelia_frame_to_vpython(prev_eval)*100
-            # get link origin and legth
-            pos = vec(*(prev_eval_vpython[0:3,3]))
-            # draw the joint
-            # if the the "d" leght comes first in the robot
-            if self.d_first[i]:
-                # draw d
-                if d_len > 0:
-                    # get the z-1 axis of  w.r.t the origin
-                    d_orientation = vec(*prev_eval_vpython[0:3,2])
-                    axis = norm(d_orientation)*float(d_len)
-                    link.v_d = cylinder(pos=pos, axis=axis,
-                            color=color.orange,radius=2)
-                # draw a
-                if a_len > 0:
-                    # if we had d before
-                    if d_len > 0:
-                        # displace the position of the link
-                        pos = pos + axis
-                        # draw a small sphere to make the joint looks smoother
-                        link.v_elbow =  sphere(pos=pos,color=color.orange, radius = 2)
-                    # get the x axis of  w.r.t the origin
-                    a_orientation = vec(*current_eval_vpython[0:3,0])
-                    axis= norm(a_orientation)*float(a_len)
-                    link.v_a = cylinder(pos=pos, axis=axis,
-                            color=color.orange,radius=2)
-            else:
-                print("IMPLEMENT 'a' distance before 'd'")
-                exit()
-            self.rob_links.append(link)
-            prev_eval = copy.copy(current_eval)
-            ########### finish visual IK
 
         if self.pose_imitation:
             if self.conic_constraints:
@@ -453,26 +411,60 @@ class robotChain:
     def forward(self):
         backward_points = self.backward_points[::-1]
         prev_frame = np.array(self.base_matrix).astype(np.float64)
-        print(len(backward_points))
+        #delete
+        copp_points = [prev_frame[:,3]]
         for i in range(len(self.rob_links)):
             # Get the joint pos evaluated at the min, max, and zero
             link = self.rob_links[i]
-            vals = self.joint_vals
-            vals[i] = link.min_angle
-            joint_min = link.eval_rot(vals)
-            vals[i] =  0
-            joint_zero = link.eval_rot(vals)
-            vals[i] = link.max_angle
-            joint_max = link.eval_rot(vals)
+            vals = copy.copy(self.joint_vals)
+            if link.length == 0 and i < (len(self.rob_links)-1):
+                next_link = self.rob_links[i+1]
+                vals[i] = link.min_angle
+                joint_min = next_link.eval_rot(vals)
+                vals[i] =  0
+                joint_zero = next_link.eval_rot(vals)
+                vals[i] = link.max_angle
+                joint_max = next_link.eval_rot(vals)
+            elif link.length == 0 and i == (len(self.rob_links)-1):
+                print("implement the case of gripper with no length")
+                exit()
+            else:
+                vals[i] = link.min_angle
+                joint_min = link.eval_rot(vals)
+                vals[i] =  0
+                joint_zero = link.eval_rot(vals)
+                vals[i] = link.max_angle
+                joint_max = link.eval_rot(vals)
             # project the target to the plane created
             # by the range of motion of the joint
+            # delete
+            #######################
+            # Draw the min,zero,max angles as a curve
+            # if i==6:
+                # vrep_min = vector(*(coppelia_pt_to_vpython(joint_min[:,3])*100).astype('float64'))
+                # vrep_zero = vector(*(coppelia_pt_to_vpython(joint_zero[:,3])*100).astype('float64'))
+                # vrep_max = vector(*(coppelia_pt_to_vpython(joint_max[:,3])*100).astype('float64'))
+                # sphere(pos=vrep_min, color = color.white,radius=4)
+                # sphere(pos=vrep_zero, color = color.cyan,radius=4)
+                # sphere(pos=vrep_max, color = color.blue,radius=4)
+            # finish drawing
+            #######################
             p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], backward_points[i+1])
+            # if the points of the plane are colinear
+            # just choose the angle value at zero and go to the next joint
+            if np.sum(p_target) == 0:
+                self.joint_vals[i] = 0
+                continue
             # add the d distance to the rotation frame
-            rot_frame = prev_frame[0:3,3] + np.array([0,0,rob_links[i].d])
+            rot_frame = prev_frame[0:3,3] + np.array([0,0,self.rob_links[i].d]).astype('float64')
+            # delete
+            # if i==6:
+                # vrep_frame  = vector(*(coppelia_pt_to_vpython(np.append(p_target,1))*100).astype('float64'))
+                # sphere(pos=vrep_frame, color = color.magenta,radius=4)
             p_zero = joint_zero[0:3,3]- rot_frame
             p_target = p_target - rot_frame
             # get the angle between the neutral joint pos (joint val=0) and the current pos
-            diff_angle = diff_angle_base(p_zero, p_target, prev_frame[0:3,2])
+            diff_angle = math.degrees(diff_angle_base(p_zero, p_target, prev_frame[0:3,2]))
             # if is greater than the max, make the max
             if (diff_angle > link.max_angle):
                 diff_angle = link.max_angle
@@ -483,16 +475,30 @@ class robotChain:
             self.joint_vals[i] = diff_angle
             # evaluate the rotation
             prev_frame = link.eval_rot(self.joint_vals)
+            #delete
+            # copp_points.append(prev_frame[:,3])
+            # if i == 5:
+                # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
+                # draw_debug(coppelia_fw,color.orange, opacity=0.5)
+                # exit()
+        #delete
+        # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
+        # draw_debug(coppelia_fw,color.orange, opacity=0.5)
+        # exit()
 
     def backward(self):
         target_point = self.target.copy()
         backward_points = [target_point]
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target_point)
-            backward_point = target_point + new_orientation*self.rob_links[i].length
+            backward_point = target_point + \
+                    (new_orientation*self.rob_links[i].length).astype('float64')
             backward_points.append(backward_point)
             target_point = backward_point
         self.backward_points = backward_points
+        # delete
+        # coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]
+        # draw_debug(coppelia_bw_points,color.blue, opacity=0.5)
 
     def pic_forward(self):
         backward_points = self.backward_points[::-1]

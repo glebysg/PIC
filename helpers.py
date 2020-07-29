@@ -269,18 +269,22 @@ def project_to_plane(normal,plane_point,point):
     d = plane_point[0]
     e = plane_point[1]
     f = plane_point[2]
+    plane_norm = a**2 + b**2 + c**2
+    if plane_norm == 0:
+        return np.zeros(3)
     t = (a*d - a*x + b*e - b*y + c*f -c*z)/\
-        (a**2 + b**2 + c**2)
+       plane_norm
     x_proy = x + t*a
     y_proy = y + t*b
     z_proy = z + t*c
     return np.array([x_proy,y_proy,z_proy])
 
 def pt_project_to_plane(p1, p2, p3, p_point):
-    # get the normal
-    normal = np.cross(p2, p1)
-    # call project to plane
-    return project_to_normal(normal, p3, p_point)
+    norm =  np.linalg.norm(np.cross(p2-p1,p3-p2))
+    if norm == 0:
+        return zeros(3)
+    n = np.cross(p2-p1,p3-p2)/norm
+    return p_point-(np.dot(p_point-p1,n))*n
 
 
 def get_line(p,q):
@@ -420,7 +424,10 @@ def get_transformations(dh, variables):
         t_matrix_list.append(lambdify(variables, t, "numpy"))
     return t_matrix_list
 
-def diff_angle_base(v1,v2,base):
+def diff_angle_base(p1,p2,pbase):
+    v1 = p1 if isinstance(p1, vector) else vector(*p1)
+    v2 = p2 if isinstance(p2, vector) else vector(*p2)
+    base = pbase if isinstance(pbase, vector) else vector(*pbase)
     direction = v1.cross(v2)
     # if the direction is negative
     if diff_angle(base,direction) > pi/2:

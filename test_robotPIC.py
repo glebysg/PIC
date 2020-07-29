@@ -197,7 +197,7 @@ left_joint_vars = symbols(left_joint_names)
 right_joint_vars = symbols(right_joint_names)
 neutral = [0,-31,0,43,0,72,0]
 home=[0,0,0,0,0,0,0]
-pose = neutral
+pose = home
 
 # Define the DH parameter matrix for the Baxter
 # following the format:
@@ -244,7 +244,7 @@ d_first = [1,1,1,1,1,1,1]
 
 joint_range=np.array([
     [-9.750e+01, 1.950e+02],
-    [ 1.950e+02, 1.950e+02],
+    [-1.750e+02, 3.500e+02],
     [-1.750e+02, 3.500e+02],
     [-2.865e+00, 1.529e+02],
     [-1.753e+02, 3.505e+02],
@@ -265,14 +265,14 @@ arm_l = robotChain(dh_params=dh_left,joint_vars=left_joint_vars,ranges=joint_ran
         iterations=iterations, soften=soften, filtering=filtering,
         filter_threshold=filter_threshold,
         render_task=task, render_scale=scale)
-arm_l.init_skeleton(home, d_first)
+arm_l.init_skeleton(pose, d_first)
 arm_r = robotChain(dh_params=dh_right,joint_vars=right_joint_vars,ranges=joint_range,
         base_matrix=torso_r, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=iterations, soften=soften, filtering=filtering,
         filter_threshold=filter_threshold,
         render_task=task, render_scale=scale)
-arm_r.init_skeleton(home, d_first)
+arm_r.init_skeleton(pose, d_first)
 
 #######################################################
 direction = None
@@ -312,6 +312,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         human_l = np.array(human_l)*100
         human_r = np.array(human_r)*100
         # get the human arms offset by scale and offset
+        # TODO: check this division by scale logic
         l_base = coppelia_pt_to_vpython(np.array(arm_l.base_matrix).astype(np.float64)[:,3]*100)/scale
         r_base = coppelia_pt_to_vpython(np.array(arm_r.base_matrix).astype(np.float64)[:,3]*100)/scale
         offset_human_l = [get_offset_point(p, np.subtract(l_base,human_l[0]), scale) for p in human_l]
