@@ -106,6 +106,7 @@ task_arm = robot_config["arm"]
 pad_offset = vec(*robot_config["pad_offset"])
 pad_axis = vec(*robot_config["pad_axis"])
 pad_dim = robot_config["pad_dim"]
+print("Pad offset", pad_offset)
 
 # get the algorigthm name for the robot file
 if args.conic_constraints and "conic_constraints" in robot_config:
