@@ -5,6 +5,7 @@ from pprint import pprint as pp
 from helpers import *
 import math
 import cv2
+import datetime
 
 class ikLink:
     def __init__(self, length=1, orientation=[1,0,0]):
@@ -15,7 +16,7 @@ class ikChain:
     def __init__(self,base=[0,0,0],chain=[], tolerance=0.1, iterations=10,
             pose_imitation=False, human_joint_index=None, soften=0,
             filtering=True, filter_threshold=10, render_task=False,
-            render_scale=1):
+            render_scale=1, visual=True):
         # initialize the canvas
         # param constraint checkup
         if pose_imitation and human_joint_index is None:
@@ -35,9 +36,11 @@ class ikChain:
         self.drag = True
         self.render_task = render_task
         self.render_scale = render_scale
+        self.visual = visual
         # self.ik_sphere=None
-        self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
-        self.ik_sphere.visible = False
+        if self.visual:
+            self.ik_sphere = sphere(pos=vec(0,0,0), color=color.red, radius=3)
+            self.ik_sphere.visible = False
         self.pose_imitation=pose_imitation
         self.human_joint_index = human_joint_index
         # Create an empty list for the constraints and for the joint points
@@ -115,10 +118,11 @@ class ikChain:
             # Normalize the orientation of the ik link
             pos = vec(*self.points[index])
             axis = vec(*(normalize(self.chain[index].orientation)*self.chain[index].length))
-            joint =  sphere(pos=pos,color=color.green, radius = 4)
-            link = cylinder(pos=pos, axis=axis, radius=2)
-            self.graphic_ik.append(joint)
-            self.graphic_ik.append(link)
+            if self.visual:
+                joint =  sphere(pos=pos,color=color.green, radius = 4)
+                link = cylinder(pos=pos, axis=axis, radius=2)
+                self.graphic_ik.append(joint)
+                self.graphic_ik.append(link)
         ########### Create the visual constraints
         # if we are going to use conic constraints
         if self.conic_constraints:
@@ -126,13 +130,14 @@ class ikChain:
             is_out = True
             for angle in conic_constraints:
                 radius = np.tan(np.radians(angle/2.0))*axis_len
-                cone_color = color.orange if is_out else color.yellow
-                self.graphic_constraints.append(
-                    cone(pos=vec(0,0,0),
-                        axis=vec(axis_len,0,0),
-                        radius=radius,
-                        opacity=0.5,
-                        color=cone_color))
+                if self.visual:
+                    cone_color = color.orange if is_out else color.yellow
+                    self.graphic_constraints.append(
+                        cone(pos=vec(0,0,0),
+                            axis=vec(axis_len,0,0),
+                            radius=radius,
+                            opacity=0.5,
+                            color=cone_color))
                 is_out = not is_out
         # if we are using cubic constraints
         else:
@@ -142,13 +147,14 @@ class ikChain:
                 constraint = self.pose_constraints[index]
                 current_joint = constraint[0]
                 if prev_joint != current_joint:
-                    constraint_cluster = []
-                    for i in range(len(self.base_offsets)):
-                        c_color = color.orange if i == constraint[1] else color.white
-                        constraint_cluster.append(box(pos=vec(0,0,0),
-                                length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
-                                opacity=0.5, color=color.white))
-                    self.graphic_constraints.append(constraint_cluster)
+                    if self.visual:
+                        constraint_cluster = []
+                        for i in range(len(self.base_offsets)):
+                            c_color = color.orange if i == constraint[1] else color.white
+                            constraint_cluster.append(box(pos=vec(0,0,0),
+                                    length=self.base_lenght, height=self.base_lenght, width=self.base_lenght,
+                                    opacity=0.5, color=color.white))
+                        self.graphic_constraints.append(constraint_cluster)
                     prev_joint = current_joint
         # add gripper
         self.gripper = pyramid(pos=vec(*self.points[-1]), size=vec(2,4,4),
@@ -468,8 +474,11 @@ class ikChain:
                 prev_points = copy.deepcopy(self.points)
             # get distance between target and goal
             error = distance(self.points[-1],self.target)
-            count = 0
+            count = 1
+            init_time = datetime.datetime.now()
+            timestamps = []
             while error > self.tolerance:
+                init_loop = datetime.datetime.now()
                 if self.pose_imitation:
                     self.py_backward()
                     self.py_forward()
@@ -480,36 +489,18 @@ class ikChain:
                 if count > self.iterations:
                         break
                 count += 1
+                end_loop = datetime.datetime.now()
+                timestamps.append((end_loop-init_loop).total_seconds())
+            end_time = datetime.datetime.now()
+            total_solve_time = (end_time - init_time).total_seconds()
             # if we are in pose imitation mode and we
             # are filtering the data
-            needs_filter = False
-            if self.pose_imitation and self.filtering:
-                # check if any angle in the chain goes over a threshhold
-                prev_link = self.chain[0]
-                for index in range(len(self.points)-2):
-                    v1 = vec(*self.points[index]) -  vec(*self.points[index + 1])
-                    prev_v1 = vec(*prev_points[index]) -  vec(*prev_points[index + 1])
-                    v2 = vec(*self.points[index + 2]) -  vec(*self.points[index + 1])
-                    prev_v2 = vec(*prev_points[index + 2]) -  vec(*prev_points[index + 1])
-                    angle = degrees(diff_angle(v1,v2))
-                    prev_angle = degrees(diff_angle(prev_v1,prev_v2))
-                    if abs(angle-prev_angle) > self.filter_threshold:
-                        needs_filter = True
-                        break
-            if needs_filter:
-                self.filtered_counter += 1
-                self.points = prev_points
-                error = distance(self.points[-1],self.target)
-                count = 0
-                while error > self.tolerance:
-                    self.backward()
-                    self.forward()
-                    error = distance(self.points[-1],self.target)
-                    if count > self.iterations:
-                            break
-                    count += 1
         self.gripper.pos = vec(*self.points[-1])
         self.draw_chain()
+        if len(timestamps) > 0:
+            return count, total_solve_time, np.mean(timestamps)
+        else:
+            return None, None, None
 
     def animate(self):
         rate(100)

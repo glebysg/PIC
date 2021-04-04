@@ -56,6 +56,8 @@ parser.add_argument('--conic_constraints',action="store_true", default=False,
         help="if present, it uses the pose imitation with conic constraints")
 parser.add_argument('--append',action="store_true", default=False,
         help="if present, append to the file instead of rewriting it")
+parser.add_argument('--visual',action="store_true", default=True,
+        help="if present, allow the algorithm to run vissually")
 parser.add_argument('--filtering',action="store_true", default=False,
         help="if present, it smoothens the movements through filtering")
 parser.add_argument('--threshold', action="store", dest="filtering_threshold", default=10,
@@ -70,6 +72,7 @@ data_version = args.data_version
 task = args.task
 pose_imitation = args.pose_imitation
 filtering = args.filtering
+visual = args.visual
 filter_threshold = args.filtering_threshold
 file_append = args.append
 smoothing = "smooth_"
@@ -86,6 +89,7 @@ print(task_path)
 print(robot_config_path)
 task_datapoints = np.loadtxt(task_path, delimiter=' ')
 out_file = path.join(args.output_path,task+data_version+"_"+robot+"_")
+out_file_raw = path.join(args.output_path,task+data_version+"_"+robot+"_")
 
 ###############################
 # read robot config
@@ -117,6 +121,7 @@ elif pose_imitation:
 else:
     algorithm = 'fabrik'
 out_file += algorithm+".txt"
+out_file_raw += algorithm+"_RAW"
 
 ########## Simplified Robot ############################
 left_chain, right_chain = read_arm(arm_path)
@@ -125,30 +130,31 @@ left_chain, right_chain = read_arm(arm_path)
 left_h_joints = [4,5,6]
 right_h_joints = [8,9,10]
 
+iterations = 100
+
 # draw x,y,z
 # initialize new bigger canvas
-iterations = 100
-scene = canvas(title='Pose imitation experiments', width=1200, height=800)
-draw_vpython_reference_frame(-100,0,100,arrow_size=10)
+if visual:
+    scene = canvas(title='Pose imitation experiments', width=1200, height=800)
+    draw_vpython_reference_frame(-100,0,100,arrow_size=10)
+    ################### incision/assembly pad  ######################
+    pad_points = []
+    length = pad_dim[0]*scale
+    height = pad_dim[1]*scale
+    width = pad_dim[2]*scale
+    if task == "assembly":
+        # occlussion calculation pad
+        pad = box(pos=pad_offset, length=length, height=height, width=width,
+                axis=pad_axis,  opacity=0.5, color=color.white)
+        pad.visible = False
+        # create the two pieces of assembly
+        # width=width, texture={'file': pad_path, place:['right']})
+    else:
+        # surgical pad
+        pad = box(pos=pad_offset, length=length, height=height,
+                width=width, texture=pad_path)
 
-################### incision/assembly pad  ######################
-pad_points = []
-length = pad_dim[0]*scale
-height = pad_dim[1]*scale
-width = pad_dim[2]*scale
-if task == "assembly":
-    # occlussion calculation pad
-    pad = box(pos=pad_offset, length=length, height=height, width=width,
-            axis=pad_axis,  opacity=0.5, color=color.white)
-    pad.visible = False
-    # create the two pieces of assembly
-    # width=width, texture={'file': pad_path, place:['right']})
-else:
-    # surgical pad
-    pad = box(pos=pad_offset, length=length, height=height,
-            width=width, texture=pad_path)
-
-print(pad_offset)
+    print(pad_offset)
 ####### Get pad plane ##########
 # if the occlussion/pad is in the x-z plane
 if np.argmax(pad_axis.value) == 0:
@@ -202,12 +208,12 @@ arm_r = ikChain(chain=right_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=iterations, soften=soften, filtering=filtering,
         filter_threshold=filter_threshold,
-        render_task=task, render_scale=scale)
+        render_task=task, render_scale=scale, visual=visual)
 arm_l = ikChain(base=base, chain=left_chain, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=iterations, soften=soften, filtering=filtering,
         filter_threshold=filter_threshold,
-        render_task=task, render_scale=scale)
+        render_task=task, render_scale=scale, visual=visual)
 arm_r.init_skeleton(init_constraints=init_constraints, conic_constraints=conic_constraints)
 arm_l.init_skeleton(init_constraints=init_constraints, conic_constraints=conic_constraints)
 # arm_r.solve([-10, -70.0, 15.0],init_constraints,conic_constraints,)
@@ -223,6 +229,7 @@ skel_reader = open(skel_path, 'r')
 line_counter = 0
 rate(30)
 task_metrics = []
+human_raw_angles = []
 
 for current_point, current_arm in zip(task_datapoints, task_arm):
     print ("CURRENT ARM", current_arm)
@@ -235,6 +242,9 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     distances = []
     h_occlussions = []
     r_occlussions = []
+    iterations_list = []
+    total_loop_times = []
+    inner_loop_times = []
     while line_counter < end_point:
         data_point = np.array(skel_reader.readline().split(), dtype=float)
         line_counter += 1
@@ -283,8 +293,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             l_constraints.append(in_l_const +1)
             r_constraints.append(out_r_const +1)
             r_constraints.append(in_r_const +1)
-        arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
-        arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
+        iterations_l, total_time_l, loop_time_l = arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
+        iterations_r, total_time_r, loop_time_r = arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
         # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
@@ -293,10 +303,26 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         mse_r = (np.square((arm_r.gripper.pos - human_target_r).value)).mean(axis=None)
         if current_arm == 'left':
             mse_list.append([mse_l])
+            if None not in (iterations_l, total_time_l, loop_time_l):
+                iterations_list.append(iterations_l)
+                total_loop_times.append(total_time_l)
+                inner_loop_times.append(loop_time_l)
         elif current_arm == 'right':
             mse_list.append([mse_r])
+            if None not in (iterations_r, total_time_r, loop_time_r):
+                iterations_list.append(iterations_r)
+                total_loop_times.append(total_time_r)
+                inner_loop_times.append(loop_time_r)
         else:
             mse_list.append([mse_r,mse_l])
+            if None not in (iterations_l, total_time_l, loop_time_l):
+                iterations_list.append(iterations_l)
+                total_loop_times.append(total_time_l)
+                inner_loop_times.append(loop_time_l)
+            if None not in (iterations_r, total_time_r, loop_time_r):
+                iterations_list.append(iterations_r)
+                total_loop_times.append(total_time_r)
+                inner_loop_times.append(loop_time_r)
         # Get the Pose
         ## Human
         if current_arm == "left" or current_arm == "both":
@@ -334,6 +360,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             # Append the squared differences in angles
             angles.append(sum_diffs)
             human_angles.append(sh_angle_h*1/3.0+el_angle_h*1/3.0+wr_angle_h*1/3.0)
+            human_raw_angles.append([sh_angle_h,el_angle_h])
             # distances.append((dist_h_l-dist_r_l)**2)
         elif current_arm == "right" or current_arm == "both":
             #### The same process but with the right arm
@@ -363,6 +390,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             # Append the squared differences in angles
             angles.append(sum_diffs)
             human_angles.append(sh_angle_h*1/3.0+el_angle_h*1/3.0+wr_angle_h*1/3.0)
+            human_raw_angles.append([sh_angle_h,el_angle_h])
         #################################################################
         ############ get the human occluded area ########################
         pad_origin = pad_points[0]
@@ -445,6 +473,9 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     # angles_mask = (angles <= 0.17).astype(int)
     pose_percentage = sum(angles_mask)/float(len(angles_mask))
     print(robot, task, "soften:", soften, "PI:", pose_imitation)
+    print("ITERATIONS %.2f" % np.mean(iterations_list))
+    print("TOTAL TIME",  np.mean(total_loop_times))
+    print("LOOP TIME", np.mean(inner_loop_times))
     print("HUMAN POSE MEAN:%.2f(%.2f)" % (human_angles.mean(), human_angles.std()))
     print("POSE MEAN %.2f and STD %.2f" % (angles.mean(), angles.std()))
     print("POSE PERCENTAGE %.2f" % pose_percentage)
@@ -458,8 +489,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     # print("POSE ANGLE:", str(round(angles, 2)))
     # print("POSE DISTANCES:", str(round(distances, 2)))
     # print("POSE F1:", str(round(2*(angles*distances)/(angles+distances),2)))
-    print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
-    print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
+    # print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
+    # print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
 
 task_metrics = np.array(task_metrics)
 if file_append:
@@ -470,6 +501,7 @@ if file_append:
 print(task_metrics)
 print(out_file)
 np.savetxt(out_file, task_metrics, delimiter=' ')
+np.savetxt(out_file_raw, human_raw_angles, delimiter=' ')
 
 scene.delete()
 print("DONE!")

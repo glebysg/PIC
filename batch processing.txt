@@ -203,3 +203,31 @@ python perform_task.py -t assembly -v 3 -r baxter -o iros_results/soft_to_rigid_
 python perform_task.py -t assembly -v 3 -r yumi -o iros_results/soft_to_rigid_10/ -f kalman  -c simulation/arms_soft_to_rigid/ -p 0.1
 python perform_task.py -t assembly -v 3 -r baxter -o iros_results/soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
 python perform_task.py -t assembly -v 3 -r yumi -o iros_results/soft_to_rigid_10/ -f kalman  --conic_constraints -c simulation/arms_soft_to_rigid/ --pose_imitation -p 0.1
+
+CREATE THE PAPER
+MAKE THIS TABLE:
+
+Table
+method \Iterations \ time per loop \ total execution time\
+RIGID
+RIGID to soft
+soft to rigid
+FABRIK
+RIGID TO SOFT
+SOFT TO RIGID
+
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints
+
+RIGID TO SOFT
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints
+
+RIGID
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints
+
+FABRIK
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_fabrik/ -f kalman  -c simulation/arms_soft_to_rigid/
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ 
+
