@@ -216,18 +216,19 @@ FABRIK
 RIGID TO SOFT
 SOFT TO RIGID
 
-python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints
-python perform_task.py -t assembly -v 3 -r baxter -o icra2021/soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints >> data/icra2021/soft_to_rigid_incision.txt
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/soft_to_rigid_20/ -f kalman  -c simulation/arms_soft_to_rigid/ --pose_imitation --conic_constraints >> data/icra2021/soft_to_rigid_assembly.txt 
 
 RIGID TO SOFT
-python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints
-python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints >> data/icra2021/rigid_to_soft_incision.txt
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_to_soft_20/ -f kalman  -c simulation/arms_rigid_to_soft/ --pose_imitation --conic_constraints>> data/icra2021/rigid_to_soft_assembly.txt
 
 RIGID
-python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints
-python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints>> data/icra2021/rigid_incision.txt
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ --pose_imitation --conic_constraints>> data/icra2021/rigid_assembly.txt
 
 FABRIK
-python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_fabrik/ -f kalman  -c simulation/arms_soft_to_rigid/
-python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ 
+python perform_task.py -t incision_straight -v 3 -r baxter -o icra2021/iros_fabrik/ -f kalman  -c simulation/arms_soft_to_rigid/>> data/icra2021/fabrik_incision.txt
+python perform_task.py -t assembly -v 3 -r baxter -o icra2021/rigid_20/ -f kalman  -c simulation/arms_rigid/ >> data/icra2021/fabrik_assembly.txt
+
 
