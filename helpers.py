@@ -30,6 +30,12 @@ def vec_to_np(vector, dtype):
       ], dtype=dtype)
 
 def coppelia_pt_to_vpython(coppelia_pt):
+    try:
+        if coppelia_pt.size<4:
+            coppelia_pt = np.append(coppelia_pt,1)
+            print("transformed pt", coppelia_pt)
+    except:
+        print("untransformed pt", coppelia_pt)
     rot = np.array([
         [0,1,0,0],
         [0,0,1,0],
@@ -284,6 +290,7 @@ def pt_project_to_plane(p1, p2, p3, p_point):
     if norm == 0:
         return zeros(3)
     n = np.cross(p2-p1,p3-p2)/norm
+    print("project_to_plane", p_point-(np.dot(p_point-p1,n))*n)
     return p_point-(np.dot(p_point-p1,n))*n
 
 
