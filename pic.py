@@ -494,6 +494,11 @@ class robotChain:
                     (new_orientation*self.rob_links[i].length).astype('float64')
             backward_points.append(backward_point)
             target_point = backward_point
+            if i%2 ==1:
+                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.blue, radius=5)
+            else:
+                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.green, radius=5)
+            sleep(2)
         self.backward_points = backward_points
         # delete
         # coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]
@@ -665,8 +670,8 @@ class robotChain:
                 if count > self.iterations:
                         break
                 # if the robot is locked
-                if abs(prev_error-error)<lock_threshold:
-                    self.correct_joints(error, beta=1)
+                # if abs(prev_error-error)<lock_threshold:
+                    # self.correct_joints(error, beta=1)
                 prev_error = error
                 self.points = self.get_points()
                 count += 1
