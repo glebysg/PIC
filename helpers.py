@@ -287,9 +287,11 @@ def project_to_plane(normal,plane_point,point):
 
 def pt_project_to_plane(p1, p2, p3, p_point):
     norm =  np.linalg.norm(np.cross(p2-p1,p3-p2))
+    print("norm", norm, p1, p2, p3)
     if norm == 0:
-        return zeros(3)
+        return np.zeros(3)
     n = np.cross(p2-p1,p3-p2)/norm
+    print("normal", n)
     print("project_to_plane", p_point-(np.dot(p_point-p1,n))*n)
     return p_point-(np.dot(p_point-p1,n))*n
 

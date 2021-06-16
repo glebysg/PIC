@@ -460,6 +460,8 @@ class robotChain:
             p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], back_target)
             print("p_target", p_target)
             sphere(pos=vec(*(coppelia_pt_to_vpython(p_target)*100)),color=color.red, radius = 5)
+            sphere(pos=vec(*(coppelia_pt_to_vpython(back_target)*100)),color=color.green, radius = 5)
+            sleep(3)
             # if the points of the plane are colinear
             # just choose the angle value at zero and go to the next joint
             if np.sum(p_target) == 0:
@@ -487,8 +489,8 @@ class robotChain:
             prev_frame = link.eval_rot(self.joint_vals)
             print("prev frame", prev_frame[:,3])
             sphere(pos=vec(*(coppelia_pt_to_vpython(prev_frame[:,3])*100)),color=color.blue, radius = 5)
-            sleep(3)
             #delete
+            sleep(3)
             # copp_points.append(prev_frame[:,3])
             # if i == 5:
                 # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
@@ -509,11 +511,11 @@ class robotChain:
                     (new_orientation*self.rob_links[i].length).astype('float64')
             backward_points.append(backward_point)
             target_point = backward_point
-            if i%2 ==1:
-                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.blue, radius = 5)
-            else:
-                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.green, radius = 5)
-            sleep(2)
+            # if i%2 ==1:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.blue, radius = 5)
+            # else:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.green, radius = 5)
+            # sleep(2)
         self.backward_points = backward_points
         # delete
         # coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]
