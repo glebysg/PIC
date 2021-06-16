@@ -9,12 +9,13 @@ def autolabel(rects):
         ax.text(rect.get_x()+rect.get_width()/2., 1.05*h, '%d'%int(h),
                 ha='center', va='bottom')
 
-incision_tasks = ['incision_curvy1', 'incision_straight3']
+incision_tasks = ['incision_straight3', 'incision_curvy1']
 assembly_tasks = ['assembly1','assebly2','assembly3']
 robots = ["yumi","baxter"]
+# algorithms = ['fabrik','poseimit0', 'poseimit1', 'poseimit2', 'poseimit3']
 algorithms = ['fabrik','poseimit0', 'poseimit1', 'poseimit2', 'poseimit3']
-out_path = 'data/rss_results/'
-# out_path = 'data/unfiltered_results/'
+# out_path = 'data/rss_results/'
+out_path = 'data/unfiltered_results/'
 pose_file = "pose.txt"
 occlussion_file = "occlussion.txt"
 distance_file = "distances.txt"
@@ -37,13 +38,12 @@ for algorithm in algorithms:
         for robot in robots:
                 name = out_path+task+"_"+ robot + "_" + algorithm + ".txt"
                 if path.exists(name):
-                    print("Processing:", name)
                     if full_result is None:
                         full_result = np.loadtxt(name, delimiter=' ')
-                        full_result[:,2] = full_result[:,2]
+                        # full_result[:,2] = full_result[:,2]
                     else:
                         result = np.loadtxt(name, delimiter=' ')
-                        result[:,2] = result[:,2]
+                        # result[:,2] = result[:,2]
                         full_result = np.concatenate((result,full_result),axis=0)
     # PLOT THE RESULT
     # Calculate the average and standard deviation
@@ -76,10 +76,11 @@ for algorithm in algorithms:
                     print("Processing:", name)
                     if full_result is None:
                         full_result = np.loadtxt(name, delimiter=' ')
-                        full_result[:,2] = full_result[:,2]
+                        # full_result[:,2] = full_result[:,2]
+                        print(full_result)
                     else:
                         result = np.loadtxt(name, delimiter=' ')
-                        result[:,2] = result[:,2]
+                        # result[:,2] = result[:,2]
                         full_result = np.concatenate((result,full_result),axis=0)
     # PLOT THE RESULT
     # Calculate the average and standard deviation
@@ -117,10 +118,10 @@ else:
 # barplot[2].set_color('crimson')
 # barplot[3].set_color('darkmagenta')
 # barplot[4].set_color('darkblue')
-ax.set_ylabel('Percentage of visible pad')
+ax.set_ylabel('Percentage of Occlussion/Obstuction (PO)')
 ax.set_xticks(x_pos+width)
 ax.set_xticklabels(['FABRIK','PIC','PICs \u03B7=1', 'PICs \u03B7=2', 'PICs \u03B7=3'])
-ax.set_title('POA for different levels of softening')
+ax.set_title('PO for different levels of softening')
 ax.yaxis.grid(True)
 ax.legend( (barplot_1[0], barplot_2[0]), ('Incision', 'Assembly') )
 
@@ -181,12 +182,13 @@ else:
 # barplot[2].set_color('crimson')
 # barplot[3].set_color('darkmagenta')
 # barplot[4].set_color('darkblue')
-ax.set_ylabel('Accuracy of pose similarily w.r.t the human')
+ax.set_ylabel('Pose Accuracy (Pacc) w.r.t the human')
 ax.set_xticks(x_pos+width)
 ax.set_xticks(x_pos)
 ax.set_xticklabels(['FABRIK','PIC','PICs \u03B7=1', 'PICs \u03B7=2', 'PICs \u03B7=3'])
-ax.set_title('Pose similarity with the human for different levels of softening')
+# ax.set_title('Pose similarity with the human for different levels of softening')
 ax.yaxis.grid(True)
+ax.legend( (barplot_1[0], barplot_2[0]), ('Incision', 'Assembly') )
 
 # Save the figure and show
 plt.tight_layout()

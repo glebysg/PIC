@@ -26,7 +26,7 @@ import json
 ##############################
 ###     PARSE ARGS         ###
 ##############################
-iterations = 20
+iterations = 40
 parser = argparse.ArgumentParser()
 parser.add_argument('-s', action="store", dest="soften", default=3,
         type=int, help="degree of softening for the imitation algorithm,\

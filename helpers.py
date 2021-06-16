@@ -35,7 +35,7 @@ def coppelia_pt_to_vpython(coppelia_pt):
             coppelia_pt = np.append(coppelia_pt,1)
             print("transformed pt", coppelia_pt)
     except:
-        print("untransformed pt", coppelia_pt)
+        pass
     rot = np.array([
         [0,1,0,0],
         [0,0,1,0],

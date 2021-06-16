@@ -391,7 +391,6 @@ class robotChain:
         # Render Task-dependent elements in the chain
         if self.render_task == "assembly":
             axis = vec(*normalize(axis.value))
-            self.gripper.size=vec(6,4,4)
             self.assembly_piece.pos=vec(*self.points[-1])+axis*self.assembly_piece.length/2
             # self.assembly_piece.pos=vec(*self.points[-1])+axis*math.sqrt(20)
             self.assembly_piece.axis=axis*self.assembly_piece.length
@@ -488,7 +487,7 @@ class robotChain:
             prev_frame = link.eval_rot(self.joint_vals)
             print("prev frame", prev_frame[:,3])
             sphere(pos=vec(*(coppelia_pt_to_vpython(prev_frame[:,3])*100)),color=color.blue, radius = 5)
-            sleep(3) 
+            sleep(3)
             #delete
             # copp_points.append(prev_frame[:,3])
             # if i == 5:
@@ -503,6 +502,7 @@ class robotChain:
     def backward(self):
         target_point = self.target.copy()
         backward_points = [target_point]
+        # sphere(pos=vec(*(coppelia_pt_to_vpython(target_point)*100)), color=color.blue, radius=5)
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target_point)
             backward_point = target_point + \
@@ -636,7 +636,25 @@ class robotChain:
             target = backward_point
         self.backward_points = backward_points
 
-    def solve(self, target, constraints=None, humman_points=None):
+    def correct_joints(self, error, beta=1):
+        for i in range(len(self.rob_links)):
+            # self.joint_vals[i] = diff_angle
+            link = self.rob_links[i]
+            vals = copy.copy(self.joint_vals)
+            val_plus = vals[i]+beta if (link.max_angle < vals[i]+beta) else link.max_angle
+            val_minus = vals[i]-beta if (link.min_angle > vals[i]-beta) else link.min_angle
+            vals[i] = val_plus
+            error_max = distance(self.rob_links[-1].eval_rot(vals)[0:3,3],self.target)
+            vals[i] = val_minus
+            error_min = distance(self.rob_links[-1].eval_rot(vals)[0:3,3],self.target)
+            if error_min < error and error_min < error_max:
+                print("replaced error min on joint", i)
+                self.joint_vals[i] = val_minus
+            elif error_max < error and error_max < error_min:
+                print("replaced error max on joint", i)
+                self.joint_vals[i] = val_plus
+
+    def solve(self, target, constraints=None, humman_points=None, lock_threshold=0.0001):
         self.iter_counter += 1
         # Initialize constraints
         if self.pose_imitation and self.conic_constraints is not None\
@@ -655,6 +673,7 @@ class robotChain:
             # get distance between target and goal
             error = distance(self.points[-1],self.target)
             count = 0
+            prev_error = -10000000000000
             while error > self.tolerance:
                 if self.pose_imitation:
                     self.pic_backward()
@@ -665,6 +684,11 @@ class robotChain:
                 error = distance(self.points[-1],self.target)
                 if count > self.iterations:
                         break
+                # if the robot is locked
+                # if abs(prev_error-error)<lock_threshold:
+                    # self.correct_joints(error, beta=1)
+                prev_error = error
+                self.points = self.get_points()
                 count += 1
             # if we are in pose imitation mode and we
             # are filtering the data

@@ -7,13 +7,14 @@ import numpy as np
 from PIL import Image
 from time import sleep
 from scipy import integrate
-import json
+from simplejson import json
 import os
 import argparse
 import signal
 import sys
 import threading
 from os import path
+
 # signal handler for killing the program
 
 ########## PARAMS ##############
@@ -59,6 +60,8 @@ parser.add_argument('--filtering',action="store_true", default=False,
 parser.add_argument('--threshold', action="store", dest="filtering_threshold", default=10,
         type=int, help="threshold of change in degrees \
                 at whitch the robot movement is fitered")
+parser.add_argument('--visual',action="store_true", default=False,
+        help="if present, the algorithm will not render anything")
 args = parser.parse_args()
 soften = args.soften
 sleep_time = args.sleep_time
@@ -92,7 +95,7 @@ out_file += algorithm+".txt"
 ###############################
 # read robot config
 config_reader = open(robot_config_path)
-robot_config = json.load(config_reader)
+robot_config = json.loads(config_reader)
 base = robot_config["base"]
 human_joint_index = robot_config["human_joint"]
 init_constraints = robot_config["constraints"]
@@ -225,6 +228,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     distances = []
     h_occlussions = []
     r_occlussions = []
+    iterations = []
     while line_counter < end_point:
         data_point = np.array(skel_reader.readline().split(), dtype=float)
         line_counter += 1
@@ -273,8 +277,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
             l_constraints.append(in_l_const +1)
             r_constraints.append(out_r_const +1)
             r_constraints.append(in_r_const +1)
-        arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
-        arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
+        iterations_l = arm_l.solve(offset_human_l[-1], l_constraints, offset_human_l)
+        iterations_r = arm_r.solve(offset_human_r[-1], r_constraints, offset_human_r)
         # print(human_r_chain[-1].po)
         # Get distannce with target
         human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
@@ -283,10 +287,14 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
         mse_r = (np.square((arm_r.gripper.pos - human_target_r).value)).mean(axis=None)
         if current_arm == 'left':
             mse_list.append([mse_l])
+            iterations.append(iterations_l)
         elif current_arm == 'right':
             mse_list.append([mse_r])
+            iterations.append(iterations_r)
         else:
             mse_list.append([mse_r,mse_l])
+            iterations.append(iterations_l)
+            iterations.append(iterations_r)
         # Get the Pose
         ## Human
         ### Get the shoulder link pointing towards the shoulder
@@ -403,6 +411,7 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     angles_mask = (angles <= 0.087).astype(int)
     pose_percentage = sum(angles_mask)/float(len(angles_mask))
     print(robot, task, "soften:", soften, "PI:", pose_imitation)
+    print("ITERATIONS %.2f" % np.mean(iterations))
     print("POSE PERCENTAGE %.2f" % pose_percentage)
     print("HUMAN OCCLUDED AREA %.3f" % np.mean(h_occlussions))
     print("ROBOT OCCLUDED AREA %.3f" % np.mean(r_occlussions))
@@ -414,8 +423,8 @@ for current_point, current_arm in zip(task_datapoints, task_arm):
     # print("POSE ANGLE:", str(round(angles, 2)))
     # print("POSE DISTANCES:", str(round(distances, 2)))
     # print("POSE F1:", str(round(2*(angles*distances)/(angles+distances),2)))
-    print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
-    print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
+    # print ("ITERATIOS", arm_r.iter_counter, arm_l.iter_counter)
+    # print ("FITERED", arm_r.filtered_counter, arm_l.filtered_counter)
 
 task_metrics = np.array(task_metrics)
 if file_append:
