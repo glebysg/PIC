@@ -449,6 +449,7 @@ class robotChain:
             # finish drawing
             #######################
             p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], backward_points[i+1])
+            sphere( pos=(vec(*coppelia_pt_to_vpython(p_target)*100)), color=color.red, radius=5)
             # if the points of the plane are colinear
             # just choose the angle value at zero and go to the next joint
             if np.sum(p_target) == 0:
@@ -474,6 +475,8 @@ class robotChain:
             self.joint_vals[i] = diff_angle
             # evaluate the rotation
             prev_frame = link.eval_rot(self.joint_vals)
+            sphere(pos = (vec(*coppelia_pt_to_vpython(prev_frame[:,3])*100)), color=color.blue, radius = 5)
+            sleep(2)
             #delete
             # copp_points.append(prev_frame[:,3])
             # if i == 5:
@@ -483,22 +486,23 @@ class robotChain:
         #delete
         # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
         # draw_debug(coppelia_fw,color.orange, opacity=0.5)
-        # exit()
+        exit()
 
     def backward(self):
         target_point = self.target.copy()
         backward_points = [target_point]
+        # sphere(pos=vec(*(coppelia_pt_to_vpython(target_point)*100)), color=color.blue, radius=5)
         for i in range(len(self.points)-2,-1,-1):
             new_orientation = normalize(self.points[i] - target_point)
             backward_point = target_point + \
                     (new_orientation*self.rob_links[i].length).astype('float64')
             backward_points.append(backward_point)
             target_point = backward_point
-            if i%2 ==1:
-                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.blue, radius=5)
-            else:
-                sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.green, radius=5)
-            sleep(2)
+            # if i%2 ==1:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.blue, radius=5)
+            # else:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)), color=color.green, radius=5)
+            # sleep(2)
         self.backward_points = backward_points
         # delete
         # coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]

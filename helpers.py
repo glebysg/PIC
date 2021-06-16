@@ -30,6 +30,11 @@ def vec_to_np(vector, dtype):
       ], dtype=dtype)
 
 def coppelia_pt_to_vpython(coppelia_pt):
+    try:
+        if coppelia_pt.size<4:
+            coppelia_pt = np.append(coppelia_pt,1)
+    except:
+        pass
     rot = np.array([
         [0,1,0,0],
         [0,0,1,0],
