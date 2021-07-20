@@ -191,176 +191,75 @@ print(pad_points[0])
 
 # create the symbolic variables that will represent
 # the joint angles
-left_joint_names = ("lt1, lt2, lt3, lt4, lt5, lt6, lt7")
-right_joint_names = ("rt1, rt2, rt3, rt4, rt5, rt6, rt7")
+left_joint_names = ("lt1, lt2, lt3")
+right_joint_names = ("rt1, rt2, rt3")
 left_joint_vars = symbols(left_joint_names)
 right_joint_vars = symbols(right_joint_names)
-neutral = [0,-31,0,43,0,72,0]
-home=[0,0,0,0,0,0,0]
+neutral = [0,-31,0]
+home=[0,0,0]
 pose = home
 
 # Define the DH parameter matrix for the Baxter
 # following the format:
-# alpha(degrees), a(mm), d(mm), theta(degrees),
+# alpha(degrees), a(m), d(m), theta(degrees),
 # range from(degrees), range to(degrees)
-torso_l= Matrix([
-    [0.707, -0.707, 0, 0.0638],
-    [0.707,  0.707, 0, 0.259],
-    [0, 0, 1, 0.1763],
-    [0, 0, 0, 1]
-])
-
-torso_r= Matrix([
-    [ 0.707,  0.707, 0, 0.0642],
-    [-0.707,  0.707, 0, -0.259],
-    [0, 0, 1, 0.1763],
-    [0, 0, 0, 1]
-])
-
-dh_left = Matrix([
-    [-90 ,0.0690 ,0.2703 ,left_joint_vars[0]],
-    [90 ,0 ,0 ,left_joint_vars[1]+90],
-    [-90 ,0.0690 ,0.3644 ,left_joint_vars[2]],
-    [90 ,0 ,0 ,left_joint_vars[3]],
-    [-90 ,0.01 ,0.3743 ,left_joint_vars[4]],
-    [90 ,0 ,0 ,left_joint_vars[5]],
-    [90.0, 0, 0.3324, left_joint_vars[6]]
-])
-
+# alpha(degrees), a(m), d(m), theta(degrees),
 dh_right = Matrix([
-    [-90 ,0.0690 ,0.2703 ,right_joint_vars[0]],
-    [90 ,0 ,0 ,right_joint_vars[1]+90],
-    [-90 ,0.0690 ,0.3644 ,right_joint_vars[2]],
-    [90 ,0 ,0 ,right_joint_vars[3]],
-    [-90 ,0.01 ,0.3743 ,right_joint_vars[4]],
-    [90.0 ,0 ,0 ,right_joint_vars[5]],
-    [90.0, 0, 0.3324, right_joint_vars[6]]
+    [90,  0.0084, 0.0834, right_joint_vars[0] + 90],
+    [-90, 0.6121,-0.0006, right_joint_vars[1] + 90],
+    [0  , 0.5722,-0.1, right_joint_vars[2]]
 ])
 
-ignore_tr = [1,0,0,0,0,0,0,0]
 # if the leght of "d" should come before the legth "a"
 # when rendering the robots
-d_first = [1,1,1,1,1,1,1]
+# TODO: check if this is good
+d_first = [1,1,1]
 
 joint_range=np.array([
-    [-9.750e+01, 1.950e+02],
-    [-1.750e+02, 3.500e+02],
-    [-1.750e+02, 3.500e+02],
-    [-2.865e+00, 1.529e+02],
-    [-1.753e+02, 3.505e+02],
-    [-9.000e+01, 2.100e+02],
-    [ 2.100e+02, 3.505e+02],
+    [0, 180.0],
+    [0, 180.0],
+    [0, 180.0]
 ])
 
-# TODO add this info to the new config files
-human_joint_index = [0,3,6]
-# Define arm joints
-left_h_joints = [4,5,6]
-right_h_joints = [8,9,10]
 
-#### Initialize the robot ######
-arm_l = robotChain(dh_params=dh_left,joint_vars=left_joint_vars,ranges=joint_range,
-        base_matrix=torso_l, pose_imitation=pose_imitation,
-        human_joint_index=human_joint_index,
-        iterations=iterations, soften=soften, filtering=filtering,
-        filter_threshold=filter_threshold,
-        render_task=task, render_scale=scale)
-arm_l.init_skeleton(pose, d_first)
 arm_r = robotChain(dh_params=dh_right,joint_vars=right_joint_vars,ranges=joint_range,
-        base_matrix=torso_r, pose_imitation=pose_imitation,
+        base_matrix=None, pose_imitation=pose_imitation,
         human_joint_index=human_joint_index,
         iterations=iterations, soften=soften, filtering=filtering,
         filter_threshold=filter_threshold,
         render_task=task, render_scale=scale)
 arm_r.init_skeleton(pose, d_first)
+# create the target
+target = sphere(pos=vector(0,0,0),color=color.red, radius = 4)
+direction = vector(1,0,0)
 
 #######################################################
-direction = None
-human_l_chain = []
-human_r_chain = []
-skel_reader = open(skel_path, 'r')
-line_counter = 0
-rate(30)
-task_metrics = []
 
-for current_point, current_arm in zip(task_datapoints, task_arm):
-    print ("CURRENT ARM", current_arm)
-    # Read lines until you get to the line that you want
-    init_point = current_point[0]
-    end_point = current_point[1]
-    mse_list = []
-    angles = []
-    human_angles = []
-    distances = []
-    h_occlussions = []
-    r_occlussions = []
-    while line_counter < end_point:
-        data_point = np.array(skel_reader.readline().split(), dtype=float)
-        line_counter += 1
-        if line_counter < init_point:
-            continue
-        sleep(sleep_time)
-        human_l = []
-        human_r = []
-        for l_index, r_index in zip(left_h_joints, right_h_joints):
-            human_l.append([-data_point[l_index*3],
-                    data_point[l_index*3+1],
-                    -data_point[l_index*3+2]])
-            human_r.append([-data_point[r_index*3],
-                    data_point[r_index*3+1],
-                    -data_point[r_index*3+2]])
-        human_l = np.array(human_l)*100
-        human_r = np.array(human_r)*100
-        # get the human arms offset by scale and offset
-        # TODO: check this division by scale logic
-        l_base = coppelia_pt_to_vpython(np.array(arm_l.base_matrix).astype(np.float64)[:,3]*100)/scale
-        r_base = coppelia_pt_to_vpython(np.array(arm_r.base_matrix).astype(np.float64)[:,3]*100)/scale
-        # l_offset = [0,10,10]
-        # r_offset = [0,10,10]
-        l_offset = [0,0,0]
-        r_offset = [0,0,0]
-        offset_human_l = [get_offset_point(p, np.subtract(l_base+l_offset,human_l[0]), scale) for p in human_l]
-        offset_human_r = [get_offset_point(p, np.subtract(r_base+r_offset,human_r[0]), scale) for p in human_r]
-        # clear the previous elements
-        for elem_l, elem_r in zip(human_l_chain,human_r_chain):
-            elem_l.visible = False
-            elem_r.visible = False
-        human_l_chain.clear()
-        human_r_chain.clear()
-        del human_l_chain[:]
-        del human_r_chain[:]
-        # draw a new element
-        human_l_chain = draw_debug(offset_human_l, color.purple,opacity=0.6)
-        human_r_chain = draw_debug(offset_human_r, color.purple,opacity=0.6)
-        # Get the pose of the new element
-        l_constraints =[]
-        r_constraints =[]
-        for joint_index in range(len(human_l)-1):
-            # get the "out" constraint
-            out_l_const = get_constraint(human_l[joint_index],human_l[joint_index+1],arm_l.get_base_offsets())
-            out_r_const = get_constraint(human_r[joint_index],human_r[joint_index+1],arm_r.get_base_offsets())
-            # get the "in" constraint
-            in_l_const = get_constraint(human_l[joint_index+1],human_l[joint_index],arm_l.get_base_offsets())
-            in_r_const = get_constraint(human_r[joint_index+1],human_r[joint_index],arm_r.get_base_offsets())
-            # append to the constraint list
-            l_constraints.append(out_l_const +1)
-            l_constraints.append(in_l_const +1)
-            r_constraints.append(out_r_const +1)
-            r_constraints.append(in_r_const +1)
-        # change the target to the coppelia world
-        l_target = vpython_pt_to_coppelia(np.append(offset_human_l[-1],1))/100
-        r_target = vpython_pt_to_coppelia(np.append(offset_human_r[-1],1))/100
-        arm_l.solve(l_target, l_constraints, offset_human_l)
-        arm_r.solve(r_target, r_constraints, offset_human_r)
-        # print(human_r_chain[-1].po)
-        # Get distannce with target
-        human_target_l = human_l_chain[-1].pos + human_l_chain[-1].axis
-        human_target_r = human_r_chain[-1].pos + human_r_chain[-1].axis
-        mse_l = (np.square((arm_l.get_gripper_pos() - human_target_l).value)).mean(axis=None)
-        mse_r = (np.square((arm_r.get_gripper_pos() - human_target_r).value)).mean(axis=None)
-        if current_arm == 'left':
-            mse_list.append([mse_l])
-        elif current_arm == 'right':
-            mse_list.append([mse_r])
-        else:
-            mse_list.append([mse_r,mse_l])
+def keyInput(keypress):
+    global arm_r
+    global target
+    global scale
+    global direction
+    rate(100)
+    s = keypress.key # get keyboard info
+    if s == 's':
+        # SOLVE
+        arm_r.solve(r_target)
+    # add to the sphere position
+    if s == 'j':
+        target.pos = target.pos - vector(1,0,0)*scale
+    elif s == 'k':
+        target.pos = target.pos + vec(0,1,0)*scale
+    elif s == 'x':
+        direction = vector(1,0,0)
+    elif s == 'y':
+        direction = vector(0,1,0)
+    elif s == 'z':
+        direction = vector(0,0,1)
+    elif e == 'e':
+        mse = (np.square((arm_r.get_gripper_pos() - target).value))
+        print("squared error for target", mse)
+
+scene.bind('keydown', keyInput)
+
+#############################################################################

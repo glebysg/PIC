@@ -4,7 +4,7 @@
     "constraints":[8,3,7,6],
     "conic_constraints":[90,60,30,30],
     "offset":[-2.9, 11.6, 194.2],
-    "scale": 2.1,
+    "scale": 2.0,
     "pad_dim":[25,2.3,25],
     "pad_axis": [1,0,0],
     "pad_offset":[1.9, -81.7, 35.5],

@@ -411,32 +411,31 @@ class robotChain:
         backward_points = self.backward_points[::-1]
         prev_frame = np.array(self.base_matrix).astype(np.float64)
         #delete
-        copp_points = [prev_frame[:,3]]
+        # copp_points = [prev_frame[:,3]]
         for i in range(len(self.rob_links)):
             # Get the joint pos evaluated at the min, max, and zero
             link = self.rob_links[i]
             vals = copy.copy(self.joint_vals)
             ########### TODO CHECK ###################3
-            # if link.length == 0 and i < (len(self.rob_links)-1):
-                # next_link = self.rob_links[i+1]
-                # vals[i] = link.min_angle
-                # joint_min = next_link.eval_rot(vals)
-                # vals[i] =  0
-                # joint_zero = next_link.eval_rot(vals)
-                # vals[i] = link.max_angle
-                # joint_max = next_link.eval_rot(vals)
-            # elif link.length == 0 and i == (len(self.rob_links)-1):
-                # print("implement the case of gripper with no length")
-                # exit()
-                #else:
-                # the next lines used to be inside this else clause
+            if link.length == 0 and i < (len(self.rob_links)-1):
+                next_link = self.rob_links[i+1]
+                vals[i] = link.min_angle
+                joint_min = next_link.eval_rot(vals)
+                vals[i] =  0
+                joint_zero = next_link.eval_rot(vals)
+                vals[i] = link.max_angle
+                joint_max = next_link.eval_rot(vals)
+            elif link.length == 0 and i == (len(self.rob_links)-1):
+                print("implement the case of gripper with no length")
+                exit()
+            else:
             ########### TODO CHECK ###################3
-            vals[i] = link.min_angle
-            joint_min = link.eval_rot(vals)
-            vals[i] =  0
-            joint_zero = link.eval_rot(vals)
-            vals[i] = link.max_angle
-            joint_max = link.eval_rot(vals)
+                vals[i] = link.min_angle
+                joint_min = link.eval_rot(vals)
+                vals[i] =  0
+                joint_zero = link.eval_rot(vals)
+                vals[i] = link.max_angle
+                joint_max = link.eval_rot(vals)
             # project the target to the plane created
             # by the range of motion of the joint
             # delete
@@ -456,12 +455,16 @@ class robotChain:
             # if (i+2<len(backward_points)) and all(backward_points[i+1] == backward_points[i+2]):
                 # back_target = backward_points[i+2]
             # else:
-            back_target = backward_points[i+1]
+            # TODO: implement gripper with zero lengh case
+            if link.length == 0 and i < (len(self.rob_links)-2):
+                back_target = backward_points[i+2]
+            else:
+                back_target = backward_points[i+1]
             p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], back_target)
-            print("p_target", p_target)
-            sphere(pos=vec(*(coppelia_pt_to_vpython(p_target)*100)),color=color.red, radius = 5)
-            sphere(pos=vec(*(coppelia_pt_to_vpython(back_target)*100)),color=color.green, radius = 5)
-            sleep(3)
+            # print("p_target", p_target)
+            # sphere(pos=vec(*(coppelia_pt_to_vpython(p_target)*100)),color=color.red, radius = 4)
+            # sphere(pos=vec(*(coppelia_pt_to_vpython(back_target)*100)),color=color.green, radius = 5)
+            # sleep(3)
             # if the points of the plane are colinear
             # just choose the angle value at zero and go to the next joint
             if np.sum(p_target) == 0:
@@ -487,10 +490,10 @@ class robotChain:
             self.joint_vals[i] = diff_angle
             # evaluate the rotation
             prev_frame = link.eval_rot(self.joint_vals)
-            print("prev frame", prev_frame[:,3])
-            sphere(pos=vec(*(coppelia_pt_to_vpython(prev_frame[:,3])*100)),color=color.blue, radius = 5)
+            # print("prev frame", prev_frame[:,3])
+            # sphere(pos=vec(*(coppelia_pt_to_vpython(prev_frame[:,3])*100)),color=color.blue, radius = 5)
             #delete
-            sleep(3)
+            # sleep(3)
             # copp_points.append(prev_frame[:,3])
             # if i == 5:
                 # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
@@ -499,7 +502,6 @@ class robotChain:
         #delete
         # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
         # draw_debug(coppelia_fw,color.orange, opacity=0.5)
-        exit()
 
     def backward(self):
         target_point = self.target.copy()
@@ -511,15 +513,15 @@ class robotChain:
                     (new_orientation*self.rob_links[i].length).astype('float64')
             backward_points.append(backward_point)
             target_point = backward_point
-            # if i%2 ==1:
-                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.blue, radius = 5)
-            # else:
-                # sphere(pos=vec(*(coppelia_pt_to_vpython(backward_point)*100)),color=color.green, radius = 5)
-            # sleep(2)
         self.backward_points = backward_points
         # delete
+        # for i in range(len(self.backward_points)):
+            # if i%2 ==1:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(self.backward_points[i])*100)),color=color.blue, radius = 5)
+            # else:
+                # sphere(pos=vec(*(coppelia_pt_to_vpython(self.backward_points[i])*100)),color=color.green, radius = 5)
+            # sleep(2)
         # coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]
-        # draw_debug(coppelia_bw_points,color.blue, opacity=0.5)
 
     def pic_forward(self):
         backward_points = self.backward_points[::-1]
@@ -639,7 +641,45 @@ class robotChain:
         self.backward_points = backward_points
 
     def correct_joints(self, error, beta=1):
+        # backward_points = self.backward_points[::-1]
+        # prev_frame = np.array(self.base_matrix).astype(np.float64)
+        # for i in range(len(self.rob_links)):
+            # # Firs, Get the joint pos evaluated at the min, max
+            # link = self.rob_links[i]
+            # vals = copy.copy(self.joint_vals)
+            # ########### TODO CHECK ###################3
+            # if link.length == 0 and i < (len(self.rob_links)-1):
+                # next_link = self.rob_links[i+1]
+                # vals[i] = link.min_angle
+                # joint_min = next_link.eval_rot(vals)
+                # vals[i] =  0
+                # joint_zero = next_link.eval_rot(vals)
+                # vals[i] = link.max_angle
+                # joint_max = next_link.eval_rot(vals)
+            # elif link.length == 0 and i == (len(self.rob_links)-1):
+                # print("implement the case of gripper with no length")
+                # exit()
+            # else:
+            # ########### TODO CHECK ###################3
+                # vals[i] = link.min_angle
+                # joint_min = link.eval_rot(vals)
+                # vals[i] =  0
+                # joint_zero = link.eval_rot(vals)
+                # vals[i] = link.max_angle
+                # joint_max = link.eval_rot(vals)
+            # if link.length == 0 and i < (len(self.rob_links)-2):
+                # back_target = backward_points[i+2]
+            # else:
+                # back_target = backward_points[i+1]
+
+
+
+
+
+        backward_points = self.backward_points[::-1]
         for i in range(len(self.rob_links)):
+            ## INSTEAD OF USING THE actual target as the target for every joint, 
+            # use the backward point like in the forward loop :D
             # self.joint_vals[i] = diff_angle
             link = self.rob_links[i]
             vals = copy.copy(self.joint_vals)
@@ -676,6 +716,8 @@ class robotChain:
             error = distance(self.points[-1],self.target)
             count = 0
             prev_error = -10000000000000
+            prev_vals = np.copy(self.joint_vals)
+            joint_diff = []
             while error > self.tolerance:
                 if self.pose_imitation:
                     self.pic_backward()
@@ -684,16 +726,19 @@ class robotChain:
                     self.backward()
                     self.forward()
                 error = distance(self.points[-1],self.target)
+                joint_diff.append(np.square(np.array(self.joint_vals)- np.array(prev_vals)))
+                prev_vals = np.copy(self.joint_vals)
                 if count > self.iterations:
                         break
                 # if the robot is locked
-                # if abs(prev_error-error)<lock_threshold:
-                    # self.correct_joints(error, beta=1)
+                if abs(prev_error-error)<lock_threshold:
+                    self.correct_joints(error, beta=30)
                 prev_error = error
                 self.points = self.get_points()
                 count += 1
             # if we are in pose imitation mode and we
             # are filtering the data
+            print(np.mean(joint_diff, axis=0))
             needs_filter = False
             if self.pose_imitation and self.filtering:
                 # check if any angle in the chain goes over a threshhold
@@ -720,7 +765,6 @@ class robotChain:
                     if count > self.iterations:
                             break
                     count += 1
-
             self.draw_chain()
         else:
             print("Not reachable")
