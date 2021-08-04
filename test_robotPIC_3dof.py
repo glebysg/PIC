@@ -16,6 +16,7 @@ import argparse
 import sys
 from os import path
 import json
+import time
 ########## PARAMS ##############
 # IMPORTANT: the distance units are in
 # centimeters for rendering purposes
@@ -244,12 +245,13 @@ def keyInput(keypress):
     s = keypress.key # get keyboard info
     if s == 's':
         # SOLVE
+        r_target = vpython_pt_to_coppelia(np.append(target.pos.value,1))/100
         arm_r.solve(r_target)
     # add to the sphere position
     if s == 'j':
-        target.pos = target.pos - vector(1,0,0)*scale
+        target.pos = target.pos - direction*scale
     elif s == 'k':
-        target.pos = target.pos + vec(0,1,0)*scale
+        target.pos = target.pos + direction*scale
     elif s == 'x':
         direction = vector(1,0,0)
     elif s == 'y':
@@ -261,5 +263,12 @@ def keyInput(keypress):
         print("squared error for target", mse)
 
 scene.bind('keydown', keyInput)
+
+try:
+    while True:
+       time.sleep(1)
+except KeyboardInterrupt:
+    print("Press Ctrl-C to terminate while statement")
+    pass
 
 #############################################################################

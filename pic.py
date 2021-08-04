@@ -728,6 +728,7 @@ class robotChain:
                 error = distance(self.points[-1],self.target)
                 joint_diff.append(np.square(np.array(self.joint_vals)- np.array(prev_vals)))
                 prev_vals = np.copy(self.joint_vals)
+                print(self.joint_vals)
                 if count > self.iterations:
                         break
                 # if the robot is locked
