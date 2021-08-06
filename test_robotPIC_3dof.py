@@ -199,6 +199,8 @@ right_joint_vars = symbols(right_joint_names)
 neutral = [0,-31,0]
 home=[0,0,0]
 pose = home
+# pose = [90, 30, 80]
+
 
 # Define the DH parameter matrix for the Baxter
 # following the format:
@@ -217,7 +219,7 @@ dh_right = Matrix([
 d_first = [1,1,1]
 
 joint_range=np.array([
-    [0, 180.0],
+    [0, 350.0],
     [0, 180.0],
     [0, 180.0]
 ])
@@ -231,7 +233,7 @@ arm_r = robotChain(dh_params=dh_right,joint_vars=right_joint_vars,ranges=joint_r
         render_task=task, render_scale=scale)
 arm_r.init_skeleton(pose, d_first)
 # create the target
-target = sphere(pos=vector(0,0,0),color=color.red, radius = 4)
+target = sphere(pos=vector(-40, 48, 32),color=color.red, radius = 4)
 direction = vector(1,0,0)
 
 #######################################################
@@ -258,6 +260,8 @@ def keyInput(keypress):
         direction = vector(0,1,0)
     elif s == 'z':
         direction = vector(0,0,1)
+    elif s == 'p':
+        print("target position:", target.pos)
     elif e == 'e':
         mse = (np.square((arm_r.get_gripper_pos() - target).value))
         print("squared error for target", mse)
