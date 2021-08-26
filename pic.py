@@ -76,6 +76,7 @@ class robotChain:
         self.tolerance = tolerance
         self.iterations = iterations
         # for animation
+        self.robot_radius = 1
         self.render_task = render_task
         self.render_scale = render_scale
         # pose imitation settings
@@ -180,8 +181,54 @@ class robotChain:
             a_len = float(link.a*100)
             d_len = float(link.d*100)
             # draw the joint
-            link.v_joint = sphere(pos=pos,color=color.orange, radius = 4)
+            link.v_joint = sphere(pos=pos,color=color.orange, radius = self.robot_radius)
             # if the the "d" leght comes first in the robot
+            ########## DELETE ################
+            # vals = copy.copy(self.joint_vals)
+            # vals[i] = link.min_angle
+            # joint_min = link.eval_rot(vals)
+            # vals[i] = abs(link.max_angle-link.min_angle)/2
+            # joint_zero = link.eval_rot(vals)
+            # vals[i] = link.max_angle
+            # joint_max = link.eval_rot(vals)
+            # #Check if we have a yaw rotation
+            # # the link would turn arround it's own axis. not allowing any traslational motion
+            # # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_min[0:3,3])*100)),color=color.yellow, radius = 6)
+            # # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_zero[0:3,3])*100)),color=color.yellow, radius = 6)
+            # # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100)),color=color.yellow, radius = 6)
+            # print("plane points:", joint_min[0:3,3],joint_zero[0:3,3],joint_max[0:3,3])
+            # # sleep(5)
+            # if np.dot(joint_min[0:3,3],joint_zero[0:3,3]) == np.linalg.norm(joint_min[0:3,3])*np.linalg.norm(joint_zero[0:3,3]) and\
+               # np.dot(joint_max[0:3,3],joint_zero[0:3,3]) == np.linalg.norm(joint_max[0:3,3])*np.linalg.norm(joint_zero[0:3,3]):
+                # print("ENTERED HERE?")
+                # arrow_size=10
+                # #zero
+                # zero_vec =vec(*(coppelia_pt_to_vpython(joint_zero[0:3,0])*100))*10-vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100))
+                # zero_v = vertex(pos=zero_vec, color=color.yellow)
+                # #min
+                # min_vec =vec(*(coppelia_pt_to_vpython(joint_min[0:3,0])*100))*10-vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100))
+                # min_v = vertex(pos=min_vec, color=color.yellow)
+                # #max
+                # max_vec =vec(*(coppelia_pt_to_vpython(joint_max[0:3,0])*100))*10-vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100))
+                # max_v = vertex(pos=max_vec, color=color.yellow)
+                # #draw
+                # base = vertex(pos=vec(*(coppelia_pt_to_vpython(prev_eval[0:3,3])*100)), color=color.blue)
+                # sphere(pos=max_v, color = color.white,radius=6)
+                # sphere(pos=min_v, color = color.white,radius=6)
+                # sphere(pos=zero_v, color = color.white,radius=6)
+                # # zero_v = vertex(pos=zero_v, color=color.cyan)
+                # # min_v = vertex( pos=min_v, color=color.cyan)
+                # # max_v = vertex( pos=max_v, color=color.magenta)
+            # else:
+                # # base = vertex( pos=vec(*(coppelia_pt_to_vpython(prev_eval[0:3,3])*100)), color=color.blue)
+                # print("triangle drawing")
+                # min_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_min[0:3,3])*100)), color=color.cyan)
+                # zero_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_zero[0:3,3])*100)), color=color.yellow)
+                # max_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100)), color=color.magenta)
+                # t = triangle(v0=min_v, v1=zero_v, v2=max_v)
+                # # Q = quad( v0=base, v1=min_v, v2=zero_v, v3=max_v )
+            # exit()
+            #################################
             if self.d_first[i]:
                 # draw d
                 if d_len > 0:
@@ -189,7 +236,7 @@ class robotChain:
                     d_orientation = vec(*prev_eval_vpython[0:3,2])
                     axis = norm(d_orientation)*float(d_len)
                     link.v_d = cylinder(pos=pos, axis=axis,
-                            color=color.orange,radius=2)
+                            color=color.orange,radius=self.robot_radius)
                 # draw a
                 if a_len > 0:
                     # if we had d before
@@ -197,12 +244,12 @@ class robotChain:
                         # displace the position of the link
                         pos = pos + axis
                         # draw a small sphere to make the joint looks smoother
-                        link.v_elbow =  sphere(pos=pos,color=color.orange, radius = 2)
+                        link.v_elbow =  sphere(pos=pos,color=color.orange, radius = self.robot_radius)
                     # get the x axis of  w.r.t the origin
                     a_orientation = vec(*current_eval_vpython[0:3,0])
                     axis= norm(a_orientation)*float(a_len)
                     link.v_a = cylinder(pos=pos, axis=axis,
-                            color=color.orange,radius=2)
+                            color=color.orange,radius=self.robot_radius)
             else:
                 print("IMPLEMENT 'a' distance before 'd'")
                 exit()
@@ -408,6 +455,7 @@ class robotChain:
         return np.array(points)
 
     def forward(self):
+        # TODO: CHECK FOR A==0 conditon, and make the plane about the rotation in the X axis :) 
         backward_points = self.backward_points[::-1]
         prev_frame = np.array(self.base_matrix).astype(np.float64)
         #delete
@@ -416,7 +464,6 @@ class robotChain:
             # Get the joint pos evaluated at the min, max, and zero
             link = self.rob_links[i]
             vals = copy.copy(self.joint_vals)
-            ########### TODO CHECK ###################3
             if link.length == 0 and i < (len(self.rob_links)-1):
                 next_link = self.rob_links[i+1]
                 vals[i] = link.min_angle
@@ -429,7 +476,6 @@ class robotChain:
                 print("implement the case of gripper with no length")
                 exit()
             else:
-            ########### TODO CHECK ###################3
                 vals[i] = link.min_angle
                 joint_min = link.eval_rot(vals)
                 vals[i] = abs(link.max_angle-link.min_angle)/2
@@ -461,11 +507,19 @@ class robotChain:
             else:
                 back_target = backward_points[i+1]
             p_target = pt_project_to_plane(joint_min[0:3,3], joint_zero[0:3,3], joint_max[0:3,3], back_target)
+            ########## DELETE ################
+            # base = vertex( pos=vec(*(coppelia_pt_to_vpython(prev_frame[0:3,3])*100)), color=color.blue)
+            min_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_min[0:3,3])*100)), color=color.cyan)
+            zero_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_zero[0:3,3])*100)), color=color.yellow)
+            max_v = vertex( pos=vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100)), color=color.magenta)
+            t = triangle(v0=min_v, v1=zero_v, v2=max_v)
+            # Q = quad( v0=base, v1=min_v, v2=zero_v, v3=max_v )
+            #################################
             # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_min[0:3,3])*100)),color=color.yellow, radius = 4)
             # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_zero[0:3,3])*100)),color=color.yellow, radius = 4)
             # sphere(pos=vec(*(coppelia_pt_to_vpython(joint_max[0:3,3])*100)),color=color.yellow, radius = 4)
             # sleep(3)
-            # sphere(pos=vec(*(coppelia_pt_to_vpython(p_target)*100)),color=color.red, radius = 4)
+            sphere(pos=vec(*(coppelia_pt_to_vpython(p_target)*100)),color=color.magenta, radius = 2) 
             # sphere(pos=vec(*(coppelia_pt_to_vpython(back_target)*100)),color=color.green, radius = 5)
             # sleep(3)
             # if the points of the plane are colinear
@@ -503,10 +557,12 @@ class robotChain:
                 # coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
                 # draw_debug(coppelia_fw,color.orange, opacity=0.5)
                 # exit()
+            input("Press for new forward step")
         #delete
         coppelia_fw = [coppelia_pt_to_vpython(p)*100 for p in copp_points]
-        draw_debug(coppelia_fw,color.red, opacity=0.5)
-        sleep(10)
+        draw_debug(coppelia_fw,color.red, opacity=0.5, radius=self.robot_radius)
+        # sleep(10)
+        # exit()
 
     def backward(self):
         target_point = self.target.copy()
@@ -527,7 +583,7 @@ class robotChain:
                 # sphere(pos=vec(*(coppelia_pt_to_vpython(self.backward_points[i])*100)),color=color.green, radius = 5)
             # sleep(2)
         coppelia_bw_points = [coppelia_pt_to_vpython(np.append(p,1))*100 for p in backward_points]
-        draw_debug(coppelia_bw_points,color.green, opacity=0.5)
+        draw_debug(coppelia_bw_points,color.green, opacity=0.5, radius=self.robot_radius)
 
 
     def pic_forward(self):
@@ -733,12 +789,13 @@ class robotChain:
                 error = distance(self.points[-1],self.target)
                 joint_diff.append(np.square(np.array(self.joint_vals)- np.array(prev_vals)))
                 prev_vals = np.copy(self.joint_vals)
-                # print(self.joint_vals)
+                print(self.joint_vals)
                 if count > self.iterations:
                         break
                 # if the robot is locked
-                if abs(prev_error-error)<lock_threshold:
-                    self.correct_joints(error, beta=30)
+                # LOCKED ROBOT BEHAVIOR
+                # if abs(prev_error-error)<lock_threshold:
+                    # self.correct_joints(error, beta=30)
                 prev_error = error
                 self.points = self.get_points()
                 count += 1
